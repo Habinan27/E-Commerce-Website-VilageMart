@@ -1,0 +1,518 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ---------------------------------------------------------
+// ENUMS
+// ---------------------------------------------------------
+
+enum UserRole {
+  CUSTOMER
+  SELLER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum SellerApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum LocationType {
+  PROVINCE
+  DISTRICT
+  CITY
+  AREA
+}
+
+enum ProductStatus {
+  PENDING
+  ACTIVE
+  REJECTED
+  INACTIVE
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  COD
+  ONLINE
+}
+
+enum ReviewStatus {
+  VISIBLE
+  HIDDEN
+  REPORTED
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
+}
+
+// ---------------------------------------------------------
+// MODELS
+// ---------------------------------------------------------
+
+// 1. users
+model User {
+  id         BigInt     @id @default(autoincrement()) @db.BigInt
+  name       String     @db.VarChar(150)
+  email      String     @unique @db.VarChar(191)
+  phone      String?    @unique @db.VarChar(20)
+  password   String     @db.VarChar(255)
+  role       UserRole   @default(CUSTOMER)
+  status     UserStatus @default(ACTIVE)
+  avatarUrl  String?    @map("avatar_url") @db.VarChar(500)
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @updatedAt @map("updated_at")
+
+  // Relations
+  sellerProfile       SellerProfile?
+  addresses           Address[]
+  cart                Cart?
+  wishlist            Wishlist?
+  orders              Order[]
+  reviews             Review[]
+  statusChangeHistory OrderStatusHistory[] @relation("ChangedByUser")
+
+  @@index([email])
+  @@index([phone])
+  @@index([role])
+  @@index([status])
+  @@map("users")
+}
+
+// 2. seller_profiles
+model SellerProfile {
+  id             BigInt               @id @default(autoincrement()) @db.BigInt
+  userId         BigInt               @unique @map("user_id") @db.BigInt
+  shopName       String               @map("shop_name") @db.VarChar(200)
+  slug           String               @unique @db.VarChar(191)
+  description    String?              @db.Text
+  logoUrl        String?              @map("logo_url") @db.VarChar(500)
+  address        String               @db.Text
+  locationId     BigInt               @map("location_id") @db.BigInt
+  approvalStatus SellerApprovalStatus @default(PENDING) @map("approval_status")
+  approvedAt     DateTime?            @map("approved_at")
+  createdAt      DateTime             @default(now()) @map("created_at")
+  updatedAt      DateTime             @updatedAt @map("updated_at")
+
+  // Relations
+  user           User                 @relation(fields: [userId], references: [id], onDelete: Restrict)
+  location       Location             @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  products       Product[]
+  orderItems     OrderItem[]
+  sellerEarnings SellerEarnings[]
+  announcements  Announcement[]
+
+  @@index([userId])
+  @@index([locationId])
+  @@index([approvalStatus])
+  @@index([slug])
+  @@map("seller_profiles")
+}
+
+// 3. locations
+model Location {
+  id        BigInt       @id @default(autoincrement()) @db.BigInt
+  name      String       @db.VarChar(150)
+  slug      String       @unique @db.VarChar(180)
+  type      LocationType
+  parentId  BigInt?      @map("parent_id") @db.BigInt
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+
+  // Self-referencing Relations
+  parent         Location?       @relation("LocationHierarchy", fields: [parentId], references: [id], onDelete: Restrict)
+  children       Location[]      @relation("LocationHierarchy")
+  sellerProfiles SellerProfile[]
+  addresses      Address[]
+
+  @@index([type])
+  @@index([parentId])
+  @@index([slug])
+  @@map("locations")
+}
+
+// 4. categories
+model Category {
+  id              BigInt    @id @default(autoincrement()) @db.BigInt
+  name            String    @db.VarChar(150)
+  slug            String    @unique @db.VarChar(180)
+  description     String?   @db.Text
+  imageUrl        String?   @map("image_url") @db.VarChar(500)
+  status          Boolean   @default(true)
+  metaTitle       String?   @map("meta_title") @db.VarChar(255)
+  metaDescription String?   @map("meta_description") @db.Text
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  products        Product[]
+
+  @@index([slug])
+  @@index([status])
+  @@map("categories")
+}
+
+// 5. products
+model Product {
+  id              BigInt        @id @default(autoincrement()) @db.BigInt
+  sellerId        BigInt        @map("seller_id") @db.BigInt
+  categoryId      BigInt        @map("category_id") @db.BigInt
+  name            String        @db.VarChar(255)
+  slug            String        @unique @db.VarChar(191)
+  description     String?       @db.Text
+  price           Decimal       @db.Decimal(12, 2)
+  stock           Int           @default(0)
+  minStock        Int           @default(0) @map("min_stock")
+  status          ProductStatus @default(PENDING)
+  metaTitle       String?       @map("meta_title") @db.VarChar(255)
+  metaDescription String?       @map("meta_description") @db.Text
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  seller        SellerProfile  @relation(fields: [sellerId], references: [id], onDelete: Restrict)
+  category      Category       @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  productImages ProductImage[]
+  cartItems     CartItem[]
+  wishlistItems WishlistItem[]
+  orderItems    OrderItem[]
+  reviews       Review[]
+
+  @@index([sellerId])
+  @@index([categoryId])
+  @@index([status])
+  @@index([price])
+  @@index([createdAt])
+  @@index([slug])
+  @@map("products")
+}
+
+// 6. product_images
+model ProductImage {
+  id        BigInt   @id @default(autoincrement()) @db.BigInt
+  productId BigInt   @map("product_id") @db.BigInt
+  imageUrl  String   @map("image_url") @db.VarChar(500)
+  altText   String?  @map("alt_text") @db.VarChar(255)
+  sortOrder Int      @default(0) @map("sort_order")
+  isPrimary Boolean  @default(false) @map("is_primary")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([productId, sortOrder])
+  @@map("product_images")
+}
+
+// 7. addresses
+model Address {
+  id          BigInt   @id @default(autoincrement()) @db.BigInt
+  userId      BigInt   @map("user_id") @db.BigInt
+  name        String   @db.VarChar(150)
+  phone       String   @db.VarChar(20)
+  addressLine String   @map("address_line") @db.Text
+  locationId  BigInt   @map("location_id") @db.BigInt
+  postalCode  String?  @map("postal_code") @db.VarChar(20)
+  isDefault   Boolean  @default(false) @map("is_default")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  location    Location @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  orders      Order[]
+
+  @@index([userId])
+  @@index([locationId])
+  @@index([isDefault])
+  @@map("addresses")
+}
+
+// 8. carts
+model Cart {
+  id        BigInt     @id @default(autoincrement()) @db.BigInt
+  userId    BigInt     @unique @map("user_id") @db.BigInt
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+
+  // Relations
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+
+  @@map("carts")
+}
+
+// 9. cart_items
+model CartItem {
+  id        BigInt   @id @default(autoincrement()) @db.BigInt
+  cartId    BigInt   @map("cart_id") @db.BigInt
+  productId BigInt   @map("product_id") @db.BigInt
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, productId])
+  @@index([cartId])
+  @@index([productId])
+  @@map("cart_items")
+}
+
+// 10. wishlists
+model Wishlist {
+  id        BigInt         @id @default(autoincrement()) @db.BigInt
+  userId    BigInt         @unique @map("user_id") @db.BigInt
+  createdAt DateTime       @default(now()) @map("created_at")
+  updatedAt DateTime       @updatedAt @map("updated_at")
+
+  // Relations
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     WishlistItem[]
+
+  @@map("wishlists")
+}
+
+// 11. wishlist_items
+model WishlistItem {
+  id         BigInt   @id @default(autoincrement()) @db.BigInt
+  wishlistId BigInt   @map("wishlist_id") @db.BigInt
+  productId  BigInt   @map("product_id") @db.BigInt
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  wishlist   Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([wishlistId, productId])
+  @@index([wishlistId])
+  @@index([productId])
+  @@map("wishlist_items")
+}
+
+// 12. orders
+model Order {
+  id            BigInt        @id @default(autoincrement()) @db.BigInt
+  orderNumber   String        @unique @map("order_number") @db.VarChar(50)
+  userId        BigInt        @map("user_id") @db.BigInt
+  addressId     BigInt        @map("address_id") @db.BigInt
+  subtotal      Decimal       @db.Decimal(12, 2)
+  deliveryFee   Decimal       @default(0) @map("delivery_fee") @db.Decimal(12, 2)
+  discount      Decimal       @default(0) @db.Decimal(12, 2)
+  totalAmount   Decimal       @map("total_amount") @db.Decimal(12, 2)
+  paymentStatus PaymentStatus @default(PENDING) @map("payment_status")
+  orderStatus   OrderStatus   @default(PENDING) @map("order_status")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  user          User                 @relation(fields: [userId], references: [id], onDelete: Restrict)
+  address       Address              @relation(fields: [addressId], references: [id], onDelete: Restrict)
+  orderItems    OrderItem[]
+  payment       Payment?
+  statusHistory OrderStatusHistory[]
+
+  @@index([orderNumber])
+  @@index([userId])
+  @@index([addressId])
+  @@index([paymentStatus])
+  @@index([orderStatus])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+// 13. order_items
+model OrderItem {
+  id             BigInt          @id @default(autoincrement()) @db.BigInt
+  orderId        BigInt          @map("order_id") @db.BigInt
+  sellerId       BigInt          @map("seller_id") @db.BigInt
+  productId      BigInt          @map("product_id") @db.BigInt
+  productName    String          @map("product_name") @db.VarChar(255)
+  quantity       Int
+  unitPrice      Decimal         @map("unit_price") @db.Decimal(12, 2)
+  subtotal       Decimal         @db.Decimal(12, 2)
+  createdAt      DateTime        @default(now()) @map("created_at")
+
+  // Relations
+  order          Order           @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  seller         SellerProfile   @relation(fields: [sellerId], references: [id], onDelete: Restrict)
+  product        Product         @relation(fields: [productId], references: [id], onDelete: Restrict)
+  review         Review?
+  sellerEarnings SellerEarnings?
+
+  @@index([orderId])
+  @@index([sellerId])
+  @@index([productId])
+  @@map("order_items")
+}
+
+// 14. payments
+model Payment {
+  id            BigInt        @id @default(autoincrement()) @db.BigInt
+  orderId       BigInt        @unique @map("order_id") @db.BigInt
+  paymentMethod PaymentMethod @default(COD) @map("payment_method")
+  gateway       String?       @db.VarChar(50)
+  transactionId String?       @unique @map("transaction_id") @db.VarChar(191)
+  amount        Decimal       @db.Decimal(12, 2)
+  status        PaymentStatus @default(PENDING)
+  paidAt        DateTime?     @map("paid_at")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  order         Order         @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+  @@index([paymentMethod])
+  @@index([status])
+  @@index([transactionId])
+  @@map("payments")
+}
+
+// 15. reviews
+model Review {
+  id          BigInt       @id @default(autoincrement()) @db.BigInt
+  productId   BigInt       @map("product_id") @db.BigInt
+  userId      BigInt       @map("user_id") @db.BigInt
+  orderItemId BigInt       @unique @map("order_item_id") @db.BigInt
+  rating      Int          @db.TinyInt
+  comment     String?      @db.Text
+  status      ReviewStatus @default(VISIBLE)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  product     Product      @relation(fields: [productId], references: [id], onDelete: Restrict)
+  user        User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  orderItem   OrderItem    @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
+
+  @@index([productId])
+  @@index([userId])
+  @@index([orderItemId])
+  @@index([rating])
+  @@index([status])
+  @@map("reviews")
+}
+
+// 16. seller_earnings
+model SellerEarnings {
+  id               BigInt       @id @default(autoincrement()) @db.BigInt
+  sellerId         BigInt       @map("seller_id") @db.BigInt
+  orderItemId      BigInt       @unique @map("order_item_id") @db.BigInt
+  grossAmount      Decimal      @map("gross_amount") @db.Decimal(12, 2)
+  commissionAmount Decimal      @map("commission_amount") @db.Decimal(12, 2)
+  netAmount        Decimal      @map("net_amount") @db.Decimal(12, 2)
+  payoutStatus     PayoutStatus @default(PENDING) @map("payout_status")
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  seller           SellerProfile @relation(fields: [sellerId], references: [id], onDelete: Restrict)
+  orderItem        OrderItem     @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
+
+  @@index([sellerId])
+  @@index([orderItemId])
+  @@index([payoutStatus])
+  @@map("seller_earnings")
+}
+
+// 17. order_status_history
+model OrderStatusHistory {
+  id        BigInt      @id @default(autoincrement()) @db.BigInt
+  orderId   BigInt      @map("order_id") @db.BigInt
+  status    OrderStatus
+  note      String?     @db.Text
+  changedBy BigInt?     @map("changed_by") @db.BigInt
+  createdAt DateTime    @default(now()) @map("created_at")
+
+  // Relations
+  order     Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user      User?       @relation("ChangedByUser", fields: [changedBy], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@index([status])
+  @@index([changedBy])
+  @@map("order_status_history")
+}
+
+// 18. password_reset_tokens
+model PasswordResetToken {
+  id         BigInt   @id @default(autoincrement()) @db.BigInt
+  identifier String   @db.VarChar(191)
+  token      String   @db.VarChar(191)
+  type       String   @default("EMAIL") @db.VarChar(20)
+  role       UserRole @default(CUSTOMER)
+  expiresAt  DateTime @map("expires_at")
+  used       Boolean  @default(false)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([identifier])
+  @@index([token])
+  @@map("password_reset_tokens")
+}
+
+// 19. announcements / promotional marquee
+model Announcement {
+  id             BigInt         @id @default(autoincrement()) @db.BigInt
+  sellerId       BigInt?        @map("seller_id") @db.BigInt
+  title          String?        @db.VarChar(100)
+  content        String         @db.Text
+  contentTamil   String?        @map("content_tamil") @db.Text
+  linkUrl        String?        @map("link_url") @db.VarChar(500)
+  linkLabel      String?        @map("link_label") @db.VarChar(100)
+  theme          String         @default("emerald") @db.VarChar(50)
+  isMarquee      Boolean        @default(true) @map("is_marquee")
+  speed          Int            @default(30)
+  isActive       Boolean        @default(true) @map("is_active")
+  displayOrder   Int            @default(0) @map("display_order")
+  targetAudience String         @default("CUSTOMERS") @map("target_audience") @db.VarChar(50)
+  startDate      DateTime?      @map("start_date")
+  endDate        DateTime?      @map("end_date")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  // Relations
+  seller         SellerProfile? @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+
+  @@index([sellerId])
+  @@index([isActive])
+  @@index([displayOrder])
+  @@index([targetAudience])
+  @@map("announcements")
+}
+
+
