@@ -208,6 +208,7 @@ model Product {
   wishlistItems WishlistItem[]
   orderItems    OrderItem[]
   reviews       Review[]
+  announcements Announcement[]
 
   @@index([sellerId])
   @@index([categoryId])
@@ -489,12 +490,22 @@ model PasswordResetToken {
 model Announcement {
   id             BigInt         @id @default(autoincrement()) @db.BigInt
   sellerId       BigInt?        @map("seller_id") @db.BigInt
+  productId      BigInt?        @map("product_id") @db.BigInt
   title          String?        @db.VarChar(100)
   content        String         @db.Text
   contentTamil   String?        @map("content_tamil") @db.Text
   linkUrl        String?        @map("link_url") @db.VarChar(500)
   linkLabel      String?        @map("link_label") @db.VarChar(100)
   theme          String         @default("emerald") @db.VarChar(50)
+  bgType         String         @default("COLOR") @map("bg_type") @db.VarChar(50)
+  bgColor        String?        @map("bg_color") @db.Text
+  textColor      String?        @map("text_color") @db.VarChar(100)
+  accentColor    String?        @map("accent_color") @db.VarChar(100)
+  borderColor    String?        @map("border_color") @db.VarChar(100)
+  buttonColor    String?        @map("button_color") @db.VarChar(100)
+  buttonTextColor String?       @map("button_text_color") @db.VarChar(100)
+  bgImage        String?        @map("bg_image") @db.Text
+  overlayOpacity Int            @default(60) @map("overlay_opacity")
   isMarquee      Boolean        @default(true) @map("is_marquee")
   speed          Int            @default(30)
   isActive       Boolean        @default(true) @map("is_active")
@@ -507,8 +518,10 @@ model Announcement {
 
   // Relations
   seller         SellerProfile? @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  product        Product?       @relation(fields: [productId], references: [id], onDelete: SetNull)
 
   @@index([sellerId])
+  @@index([productId])
   @@index([isActive])
   @@index([displayOrder])
   @@index([targetAudience])

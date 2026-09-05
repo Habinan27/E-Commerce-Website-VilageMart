@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import {
   Megaphone,
   Plus,
@@ -17,6 +18,16 @@ import {
   Play,
   Pause,
   Store,
+  Image as ImageIcon,
+  Upload,
+  X,
+  Sliders,
+  RefreshCw,
+  Sparkle,
+  ShoppingBag,
+  Search,
+  Link2,
+  Package,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,12 +38,25 @@ interface Announcement {
   sellerId?: string | null;
   sellerShopName?: string | null;
   sellerSlug?: string | null;
+  productId?: string | null;
+  productName?: string | null;
+  productSlug?: string | null;
+  productPrice?: number | null;
   title: string | null;
   content: string;
   contentTamil: string | null;
   linkUrl: string | null;
   linkLabel: string | null;
   theme: string;
+  bgType?: string | null;
+  bgColor?: string | null;
+  textColor?: string | null;
+  accentColor?: string | null;
+  borderColor?: string | null;
+  buttonColor?: string | null;
+  buttonTextColor?: string | null;
+  bgImage?: string | null;
+  overlayOpacity?: number | null;
   isMarquee: boolean;
   speed: number;
   isActive: boolean;
@@ -42,14 +66,130 @@ interface Announcement {
   updatedAt: string;
 }
 
-const THEME_OPTIONS = [
-  { id: 'emerald', name: 'Fresh Green (Brand)', color: 'bg-emerald-900 text-emerald-100' },
-  { id: 'amber', name: 'Harvest Amber', color: 'bg-amber-800 text-amber-100' },
-  { id: 'blue', name: 'Ocean Blue', color: 'bg-blue-900 text-blue-100' },
-  { id: 'purple', name: 'Heritage Purple', color: 'bg-purple-900 text-purple-100' },
-  { id: 'red', name: 'Festival Red', color: 'bg-rose-900 text-rose-100' },
-  { id: 'slate', name: 'Midnight Charcoal', color: 'bg-slate-900 text-slate-100' },
-  { id: 'gold', name: 'Golden Palmyra', color: 'bg-yellow-900 text-yellow-100' },
+interface ProductSearchResult {
+  id: string;
+  name: string;
+  slug: string;
+  price: number;
+  stock: number;
+  status: string;
+  primaryImage: string | null;
+  sellerId: string;
+  sellerShopName: string;
+  sellerSlug: string;
+}
+
+const GRADIENT_PRESETS = [
+  {
+    id: 'emerald_glow',
+    name: '🍃 Fresh Emerald (Brand)',
+    gradient: 'linear-gradient(90deg, #022c22 0%, #065f46 50%, #022c22 100%)',
+    textColor: '#ffffff',
+    accentColor: '#064e3b',
+    buttonColor: '#059669',
+    buttonTextColor: '#ffffff',
+  },
+  {
+    id: 'golden_palmyra',
+    name: '🌾 Golden Palmyra',
+    gradient: 'linear-gradient(90deg, #022c22 0%, #854d0e 50%, #022c22 100%)',
+    textColor: '#ffffff',
+    accentColor: '#422006',
+    buttonColor: '#ca8a04',
+    buttonTextColor: '#ffffff',
+  },
+  {
+    id: 'sunset_harvest',
+    name: '🌅 Sunset Harvest',
+    gradient: 'linear-gradient(90deg, #451a03 0%, #b45309 50%, #78350f 100%)',
+    textColor: '#ffffff',
+    accentColor: '#451a03',
+    buttonColor: '#d97706',
+    buttonTextColor: '#ffffff',
+  },
+  {
+    id: 'ocean_twilight',
+    name: '🌊 Ocean Twilight',
+    gradient: 'linear-gradient(90deg, #0f172a 0%, #1e40af 50%, #0284c7 100%)',
+    textColor: '#ffffff',
+    accentColor: '#172554',
+    buttonColor: '#0284c7',
+    buttonTextColor: '#ffffff',
+  },
+  {
+    id: 'heritage_purple',
+    name: '🍇 Heritage Purple',
+    gradient: 'linear-gradient(90deg, #3b0764 0%, #86198f 50%, #4a044e 100%)',
+    textColor: '#ffffff',
+    accentColor: '#3b0764',
+    buttonColor: '#9333ea',
+    buttonTextColor: '#ffffff',
+  },
+  {
+    id: 'festival_crimson',
+    name: '🏮 Festival Crimson',
+    gradient: 'linear-gradient(90deg, #4c0519 0%, #be123c 50%, #881337 100%)',
+    textColor: '#ffffff',
+    accentColor: '#4c0519',
+    buttonColor: '#e11d48',
+    buttonTextColor: '#ffffff',
+  },
+  {
+    id: 'midnight_aurora',
+    name: '🌌 Midnight Aurora',
+    gradient: 'linear-gradient(90deg, #020617 0%, #065f46 50%, #0f172a 100%)',
+    textColor: '#ffffff',
+    accentColor: '#020617',
+    buttonColor: '#047857',
+    buttonTextColor: '#ffffff',
+  },
+  {
+    id: 'fiery_amber',
+    name: '🔥 Fiery Amber',
+    gradient: 'linear-gradient(90deg, #7f1d1d 0%, #c2410c 50%, #9a3412 100%)',
+    textColor: '#ffffff',
+    accentColor: '#450a0a',
+    buttonColor: '#ea580c',
+    buttonTextColor: '#ffffff',
+  },
+  {
+    id: 'royal_berry',
+    name: '🌸 Royal Berry',
+    gradient: 'linear-gradient(90deg, #831843 0%, #db2777 50%, #9d174d 100%)',
+    textColor: '#ffffff',
+    accentColor: '#500724',
+    buttonColor: '#db2777',
+    buttonTextColor: '#ffffff',
+  },
+  {
+    id: 'cyber_indigo',
+    name: '⚡ Cyber Indigo',
+    gradient: 'linear-gradient(90deg, #1e1b4b 0%, #4338ca 50%, #312e81 100%)',
+    textColor: '#ffffff',
+    accentColor: '#1e1b4b',
+    buttonColor: '#6366f1',
+    buttonTextColor: '#ffffff',
+  },
+];
+
+const SOLID_PRESETS = [
+  { id: 'emerald', name: 'Fresh Emerald', color: '#064e3b', text: '#ffffff', accent: '#022c22', button: '#059669', buttonText: '#ffffff' },
+  { id: 'amber', name: 'Harvest Amber', color: '#78350f', text: '#ffffff', accent: '#451a03', button: '#d97706', buttonText: '#ffffff' },
+  { id: 'blue', name: 'Deep Ocean', color: '#1e3a8a', text: '#ffffff', accent: '#172554', button: '#2563eb', buttonText: '#ffffff' },
+  { id: 'purple', name: 'Heritage Purple', color: '#581c87', text: '#ffffff', accent: '#3b0764', button: '#9333ea', buttonText: '#ffffff' },
+  { id: 'crimson', name: 'Festival Crimson', color: '#881337', text: '#ffffff', accent: '#4c0519', button: '#e11d48', buttonText: '#ffffff' },
+  { id: 'slate', name: 'Midnight Slate', color: '#0f172a', text: '#ffffff', accent: '#020617', button: '#475569', buttonText: '#ffffff' },
+  { id: 'gold', name: 'Golden Palmyra', color: '#713f12', text: '#ffffff', accent: '#422006', button: '#ca8a04', buttonText: '#ffffff' },
+];
+
+const BUTTON_PRESETS = [
+  'Shop Now →',
+  'View Product →',
+  'Order Today →',
+  'Buy Now →',
+  'Explore Products →',
+  'Special Offer →',
+  'Learn More →',
 ];
 
 export default function AdminAnnouncementsPage() {
@@ -63,13 +203,39 @@ export default function AdminAnnouncementsPage() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [contentTamil, setContentTamil] = useState('');
-  const [linkUrl, setLinkUrl] = useState('');
-  const [linkLabel, setLinkLabel] = useState('Explore →');
-  const [theme, setTheme] = useState('emerald');
+  const [theme, setTheme] = useState('emerald_glow');
   const [isMarquee, setIsMarquee] = useState(true);
   const [speed, setSpeed] = useState(28);
   const [isActive, setIsActive] = useState(true);
   const [targetAudience, setTargetAudience] = useState('CUSTOMERS');
+
+  // Product Link & Action Button States
+  const [linkType, setLinkType] = useState<'PRODUCT' | 'CUSTOM' | 'NONE'>('PRODUCT');
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<ProductSearchResult | null>(null);
+  const [productSearchQuery, setProductSearchQuery] = useState('');
+  const [productSearchResults, setProductSearchResults] = useState<ProductSearchResult[]>([]);
+  const [searchingProducts, setSearchingProducts] = useState(false);
+  const [linkUrl, setLinkUrl] = useState('/products');
+  const [linkLabel, setLinkLabel] = useState('Shop Now →');
+  const [buttonTextColor, setButtonTextColor] = useState('#ffffff');
+  const [buttonColor, setButtonColor] = useState('#059669');
+
+  // Custom Theme & Background Mode ('GRADIENT' | 'COLOR' | 'IMAGE')
+  const [bgType, setBgType] = useState<'GRADIENT' | 'COLOR' | 'IMAGE'>('GRADIENT');
+  const [bgColor, setBgColor] = useState(GRADIENT_PRESETS[0].gradient);
+  const [textColor, setTextColor] = useState('#ffffff');
+  const [accentColor, setAccentColor] = useState('#064e3b');
+  const [borderColor, setBorderColor] = useState('');
+  const [bgImage, setBgImage] = useState('');
+  const [overlayOpacity, setOverlayOpacity] = useState(60);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Custom Gradient Generator State
+  const [gradientColor1, setGradientColor1] = useState('#022c22');
+  const [gradientColor2, setGradientColor2] = useState('#065f46');
+  const [gradientAngle, setGradientAngle] = useState('90deg');
 
   // Messages & Modals
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -97,14 +263,75 @@ export default function AdminAnnouncementsPage() {
     }
   };
 
+  const searchProducts = async (q: string) => {
+    try {
+      setSearchingProducts(true);
+      const params = new URLSearchParams();
+      if (q) params.set('q', q);
+      const res = await fetch(`/api/products/search?${params.toString()}`);
+      if (res.ok) {
+        const data = await res.json();
+        setProductSearchResults(data.products || []);
+      }
+    } catch (err) {
+      console.error('Error fetching products:', err);
+    } finally {
+      setSearchingProducts(false);
+    }
+  };
+
+  const handleApplyGradientPreset = (preset: (typeof GRADIENT_PRESETS)[0]) => {
+    setBgType('GRADIENT');
+    setTheme(preset.id);
+    setBgColor(preset.gradient);
+    setTextColor(preset.textColor);
+    setAccentColor(preset.accentColor);
+    setButtonColor(preset.buttonColor);
+    setButtonTextColor(preset.buttonTextColor || '#ffffff');
+  };
+
+  const handleApplySolidPreset = (preset: (typeof SOLID_PRESETS)[0]) => {
+    setBgType('COLOR');
+    setTheme(preset.id);
+    setBgColor(preset.color);
+    setTextColor(preset.text);
+    setAccentColor(preset.accent);
+    setButtonColor(preset.button);
+    setButtonTextColor(preset.buttonText || '#ffffff');
+  };
+
+  const handleUpdateCustomGradient = (c1: string, c2: string, angle: string) => {
+    setGradientColor1(c1);
+    setGradientColor2(c2);
+    setGradientAngle(angle);
+    const gradStr = `linear-gradient(${angle}, ${c1} 0%, ${c2} 100%)`;
+    setBgColor(gradStr);
+    setBgType('GRADIENT');
+  };
+
   const handleOpenCreate = () => {
     setEditingId(null);
     setTitle('🌾 Seasonal Offer');
     setContent('Special Sinhala & Tamil New Year Offer: Enjoy Free Delivery on orders over Rs. 3,500! • Use Code: VILLAGE2026');
     setContentTamil('ரூ. 3,500க்கு மேற்பட்ட அனைத்து கட்டளைகளுக்கும் இலவச விநியோகம்! • தூய கிராமத்து உற்பத்திப் பொருட்கள்.');
+    setLinkType('PRODUCT');
+    setSelectedProductId(null);
+    setSelectedProduct(null);
+    setProductSearchQuery('');
+    setProductSearchResults([]);
+    searchProducts('');
     setLinkUrl('/products');
     setLinkLabel('Shop Now →');
-    setTheme('emerald');
+    setTheme('emerald_glow');
+    setBgType('GRADIENT');
+    setBgColor(GRADIENT_PRESETS[0].gradient);
+    setTextColor('#ffffff');
+    setAccentColor('#064e3b');
+    setBorderColor('');
+    setButtonColor('#059669');
+    setButtonTextColor('#ffffff');
+    setBgImage('');
+    setOverlayOpacity(60);
     setIsMarquee(true);
     setSpeed(28);
     setIsActive(true);
@@ -118,15 +345,100 @@ export default function AdminAnnouncementsPage() {
     setTitle(item.title || '');
     setContent(item.content);
     setContentTamil(item.contentTamil || '');
-    setLinkUrl(item.linkUrl || '');
-    setLinkLabel(item.linkLabel || '');
+    setLinkLabel(item.linkLabel || 'Shop Now →');
     setTheme(item.theme || 'emerald');
+
+    if (item.productId) {
+      setLinkType('PRODUCT');
+      setSelectedProductId(item.productId);
+      setSelectedProduct({
+        id: item.productId,
+        name: item.productName || 'Linked Product',
+        slug: item.productSlug || '',
+        price: item.productPrice || 0,
+        stock: 1,
+        status: 'ACTIVE',
+        primaryImage: null,
+        sellerId: item.sellerId || '',
+        sellerShopName: item.sellerShopName || 'Seller',
+        sellerSlug: item.sellerSlug || '',
+      });
+      setLinkUrl(`/products/${item.productSlug || ''}`);
+    } else if (item.linkUrl) {
+      setLinkType('CUSTOM');
+      setSelectedProductId(null);
+      setSelectedProduct(null);
+      setLinkUrl(item.linkUrl);
+    } else {
+      setLinkType('NONE');
+      setSelectedProductId(null);
+      setSelectedProduct(null);
+      setLinkUrl('');
+    }
+
+    setProductSearchQuery('');
+    searchProducts('');
+
+    const itemBgType = (item.bgType as 'GRADIENT' | 'COLOR' | 'IMAGE') || (item.bgColor?.includes('gradient') ? 'GRADIENT' : 'COLOR');
+    setBgType(itemBgType);
+    setBgColor(item.bgColor || GRADIENT_PRESETS[0].gradient);
+    setTextColor(item.textColor || '#ffffff');
+    setAccentColor(item.accentColor || '#064e3b');
+    setBorderColor(item.borderColor || '');
+    setButtonColor(item.buttonColor || '#059669');
+    setButtonTextColor(item.buttonTextColor || '#ffffff');
+    setBgImage(item.bgImage || '');
+    setOverlayOpacity(
+      item.overlayOpacity !== undefined && item.overlayOpacity !== null ? item.overlayOpacity : 60
+    );
     setIsMarquee(item.isMarquee);
     setSpeed(item.speed || 28);
     setIsActive(item.isActive);
     setTargetAudience(item.targetAudience || 'CUSTOMERS');
     setErrorMessage(null);
     setIsFormOpen(true);
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setErrorMessage('Please select a valid image file (PNG, JPG, WebP)');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setErrorMessage('Image size should be less than 5MB');
+      return;
+    }
+
+    try {
+      setUploadingImage(true);
+      setErrorMessage(null);
+      const formData = new FormData();
+      formData.append('files', file);
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok || (!data.urls?.length && !data.url)) {
+        throw new Error(data.error || 'Failed to upload background image');
+      }
+
+      const uploadedUrl = data.url || data.urls[0];
+      setBgImage(uploadedUrl);
+      setBgType('IMAGE');
+    } catch (err: any) {
+      console.error(err);
+      setErrorMessage(err.message || 'Image upload failed');
+    } finally {
+      setUploadingImage(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -140,13 +452,41 @@ export default function AdminAnnouncementsPage() {
       setSaving(true);
       setErrorMessage(null);
 
+      let finalProductId: string | null = null;
+      let finalLinkUrl: string | null = null;
+      let finalLinkLabel: string | null = null;
+
+      if (linkType === 'PRODUCT') {
+        finalProductId = selectedProductId;
+        finalLinkUrl = selectedProduct?.slug ? `/products/${selectedProduct.slug}` : (linkUrl.trim() || null);
+        finalLinkLabel = linkLabel.trim() || 'Shop Now →';
+      } else if (linkType === 'CUSTOM') {
+        finalProductId = null;
+        finalLinkUrl = linkUrl.trim() || null;
+        finalLinkLabel = linkLabel.trim() || 'Explore →';
+      } else {
+        finalProductId = null;
+        finalLinkUrl = null;
+        finalLinkLabel = null;
+      }
+
       const payload = {
+        productId: finalProductId,
         title: title.trim() || null,
         content: content.trim(),
         contentTamil: contentTamil.trim() || null,
-        linkUrl: linkUrl.trim() || null,
-        linkLabel: linkLabel.trim() || null,
+        linkUrl: finalLinkUrl,
+        linkLabel: finalLinkLabel,
         theme,
+        bgType,
+        bgColor: bgType === 'IMAGE' ? null : bgColor,
+        textColor: textColor || null,
+        accentColor: accentColor || null,
+        borderColor: borderColor || null,
+        buttonColor: buttonColor || null,
+        buttonTextColor: buttonTextColor || null,
+        bgImage: bgType === 'IMAGE' ? bgImage : null,
+        overlayOpacity: Number(overlayOpacity),
         isMarquee,
         speed: Number(speed),
         isActive,
@@ -224,7 +564,6 @@ export default function AdminAnnouncementsPage() {
     const targetId = deleteModalId;
     try {
       setIsDeleting(true);
-      // Smooth slide and fade out transition
       setDeletingIds((prev) => [...prev, targetId]);
       setDeleteModalId(null);
 
@@ -238,7 +577,6 @@ export default function AdminAnnouncementsPage() {
         throw new Error(data.error || 'Failed to delete announcement');
       }
 
-      // Allow 300ms for smooth CSS collapse animation before removing from state
       setTimeout(() => {
         setAnnouncements((prev) => prev.filter((a) => a.id !== targetId));
         setDeletingIds((prev) => prev.filter((id) => id !== targetId));
@@ -257,7 +595,7 @@ export default function AdminAnnouncementsPage() {
     }
   };
 
-  const previewTheme = THEME_OPTIONS.find((t) => t.id === theme) || THEME_OPTIONS[0];
+  const hasActionButton = linkType !== 'NONE' && (linkType === 'PRODUCT' ? (selectedProduct || linkLabel) : (linkUrl || linkLabel));
 
   return (
     <div className="space-y-8 pb-12">
@@ -273,7 +611,7 @@ export default function AdminAnnouncementsPage() {
             </span>
           </div>
           <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
-            Display continuous scrolling promotional text, festival discounts, and broadcast alerts at the very top of the website.
+            Display beautiful gradient tickers with dedicated product buttons and seasonal promotions across the website top bar.
           </p>
         </div>
 
@@ -292,14 +630,14 @@ export default function AdminAnnouncementsPage() {
 
       {/* Create / Edit Form Modal or Panel */}
       {isFormOpen && (
-        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-200 dark:border-slate-800 p-6 sm:p-8 shadow-md space-y-6 transition-colors duration-150">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-200 dark:border-slate-800 p-6 sm:p-8 shadow-lg space-y-6 transition-colors duration-150">
           <div className="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-slate-800">
             <div>
               <h2 className="text-base font-bold text-gray-900 dark:text-slate-100">
                 {editingId ? 'Edit Announcement' : 'Create New Promotional Announcement'}
               </h2>
               <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
-                Configure content, display mode, animation speed, and color themes.
+                Customize announcement text, link to specific village products, choose themes, and style dedicated action buttons.
               </p>
             </div>
             <button
@@ -318,34 +656,70 @@ export default function AdminAnnouncementsPage() {
             </div>
           )}
 
-          {/* Live Preview Card */}
+          {/* Unified Live Storefront Preview (Exact 1:1 Rendering) */}
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs font-bold text-gray-700 dark:text-slate-300">
               <span className="flex items-center gap-1.5">
                 <Eye className="w-3.5 h-3.5 text-brand-700 dark:text-emerald-400" /> Live Storefront Preview:
               </span>
               <span className="text-[11px] text-gray-400 dark:text-slate-500">
-                Mode: {isMarquee ? 'Continuous Scrolling Marquee' : 'Static Highlight Banner'}
+                Mode: {isMarquee ? 'Continuous Marquee' : 'Static Banner'} • Style: {bgType}
               </span>
             </div>
 
-            <div className={`rounded-2xl overflow-hidden p-3.5 shadow-sm transition-all ${previewTheme.color}`}>
-              <div className="flex items-center justify-center flex-wrap gap-2 text-xs font-medium">
+            {/* Continuous Full-Width Top Bar Preview */}
+            <div
+              className="relative rounded-2xl overflow-hidden py-3 px-6 shadow-sm border border-black/20 transition-all duration-200 flex items-center justify-center text-center text-white"
+              style={{
+                background: bgType === 'IMAGE' && bgImage ? undefined : bgColor,
+                backgroundImage: bgType === 'IMAGE' && bgImage ? `url("${bgImage}")` : undefined,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                borderColor: borderColor || 'rgba(0,0,0,0.2)',
+              }}
+            >
+              {/* Overlay for Image Background */}
+              {bgType === 'IMAGE' && bgImage && (
+                <div
+                  className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/70 to-black/85 pointer-events-none transition-opacity duration-200"
+                  style={{ opacity: overlayOpacity / 100 }}
+                />
+              )}
+
+              <div className="relative z-10 flex items-center justify-center flex-wrap gap-2.5 sm:gap-3 text-xs font-medium">
                 {title && (
-                  <span className="bg-black/30 border border-white/20 text-white px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider">
+                  <span
+                    className="px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-xs border"
+                    style={{
+                      backgroundColor: accentColor || 'rgba(0,0,0,0.4)',
+                      borderColor: borderColor || accentColor || 'rgba(255,255,255,0.25)',
+                      color: '#ffffff',
+                    }}
+                  >
                     {title}
                   </span>
                 )}
-                <span className="font-semibold">{content || 'Your announcement message will appear here...'}</span>
+                <span className="font-semibold text-xs tracking-tight" style={{ color: textColor || '#ffffff' }}>
+                  {content || 'Your announcement message will appear here...'}
+                </span>
                 {contentTamil && (
                   <>
-                    <span className="opacity-40">•</span>
-                    <span className="font-medium font-tamil">{contentTamil}</span>
+                    <span className="opacity-40 select-none text-white/70">•</span>
+                    <span className="font-medium text-xs font-tamil text-white/90" style={{ color: textColor || '#ffffff' }}>
+                      {contentTamil}
+                    </span>
                   </>
                 )}
-                {linkUrl && (
-                  <span className="inline-flex items-center gap-1 bg-white/20 hover:bg-white/30 px-2.5 py-0.5 rounded-full text-[11px] font-bold border border-white/20">
-                    <span>{linkLabel || 'Explore'}</span>
+                {hasActionButton && (
+                  <span
+                    className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-[11px] font-bold border shadow-xs transition-all"
+                    style={{
+                      backgroundColor: buttonColor || '#059669',
+                      borderColor: borderColor || buttonColor || 'rgba(255,255,255,0.3)',
+                      color: buttonTextColor || '#ffffff',
+                    }}
+                  >
+                    <span>{linkLabel || 'Shop Now →'}</span>
                     <ArrowRight className="w-3 h-3" />
                   </span>
                 )}
@@ -354,6 +728,7 @@ export default function AdminAnnouncementsPage() {
           </div>
 
           <form onSubmit={handleSave} className="space-y-6 pt-2">
+            {/* Title Badge & Audience */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
                 label="Badge / Tag Title (Optional)"
@@ -362,14 +737,21 @@ export default function AdminAnnouncementsPage() {
                 onChange={(e) => setTitle(e.target.value)}
               />
 
-              <Input
-                label="Target Link URL (Optional)"
-                placeholder="e.g. /products, /sellers/yarl-nature-organics"
-                value={linkUrl}
-                onChange={(e) => setLinkUrl(e.target.value)}
-              />
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-700 dark:text-slate-300">Target Audience</label>
+                <select
+                  value={targetAudience}
+                  onChange={(e) => setTargetAudience(e.target.value)}
+                  className="w-full text-xs rounded-xl border border-gray-300 dark:border-slate-700 p-2.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 focus:ring-2 focus:ring-brand-500 dark:focus:ring-emerald-500 transition-colors"
+                >
+                  <option value="CUSTOMERS">All Customers / Public Visitors</option>
+                  <option value="SELLERS">Sellers Only</option>
+                  <option value="ALL">Everyone</option>
+                </select>
+              </div>
             </div>
 
+            {/* Announcement Message Fields */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-gray-700 dark:text-slate-300">English Announcement Message *</label>
               <textarea
@@ -393,15 +775,301 @@ export default function AdminAnnouncementsPage() {
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              <Input
-                label="Link Button Text"
-                placeholder="e.g. Shop Now →, View Offer"
-                value={linkLabel}
-                onChange={(e) => setLinkLabel(e.target.value)}
-              />
+            {/* PRODUCT REDIRECT BUTTON & DESTINATION SECTION */}
+            <div className="p-5 rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200/80 dark:border-emerald-800/60 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-emerald-100 dark:border-emerald-900/40">
+                <div>
+                  <h3 className="text-xs font-bold text-gray-900 dark:text-slate-100 flex items-center gap-1.5">
+                    <ShoppingBag className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    Individual Product Button & Destination
+                  </h3>
+                  <p className="text-[11px] text-gray-500 dark:text-slate-400">
+                    Each announcement has its own separate action button redirecting customers to a specific product or page.
+                  </p>
+                </div>
 
-              {/* Display Mode */}
+                {/* 3-Mode Destination Switcher */}
+                <div className="inline-flex p-1 bg-white dark:bg-slate-800 rounded-xl text-xs font-bold border border-gray-200 dark:border-slate-700 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLinkType('PRODUCT');
+                      if (!productSearchResults.length) searchProducts('');
+                    }}
+                    className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
+                      linkType === 'PRODUCT'
+                        ? 'bg-emerald-600 text-white shadow-xs'
+                        : 'text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200'
+                    }`}
+                  >
+                    <ShoppingBag className="w-3.5 h-3.5" />
+                    <span>Link to Product</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLinkType('CUSTOM')}
+                    className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
+                      linkType === 'CUSTOM'
+                        ? 'bg-emerald-600 text-white shadow-xs'
+                        : 'text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200'
+                    }`}
+                  >
+                    <Link2 className="w-3.5 h-3.5" />
+                    <span>Custom URL</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLinkType('NONE')}
+                    className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
+                      linkType === 'NONE'
+                        ? 'bg-gray-700 text-white shadow-xs'
+                        : 'text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200'
+                    }`}
+                  >
+                    <span>No Button</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Mode 1: Link to Product */}
+              {linkType === 'PRODUCT' && (
+                <div className="space-y-3">
+                  {selectedProduct ? (
+                    <div className="p-3.5 rounded-xl bg-white dark:bg-slate-800 border border-emerald-300 dark:border-emerald-700/60 flex items-center justify-between gap-3 shadow-xs">
+                      <div className="flex items-center gap-3 min-w-0">
+                        {selectedProduct.primaryImage ? (
+                          <img
+                            src={selectedProduct.primaryImage}
+                            alt={selectedProduct.name}
+                            className="w-12 h-12 rounded-lg object-cover border border-gray-200 dark:border-slate-700 shrink-0"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center text-emerald-700 dark:text-emerald-400 shrink-0">
+                            <Package className="w-6 h-6" />
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs font-bold text-gray-900 dark:text-slate-100 truncate">
+                              {selectedProduct.name}
+                            </p>
+                            <span className="bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0">
+                              Rs. {selectedProduct.price.toLocaleString()}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-gray-500 dark:text-slate-400 truncate mt-0.5">
+                            Seller: <span className="font-semibold text-gray-700 dark:text-slate-300">{selectedProduct.sellerShopName}</span> • URL: /products/{selectedProduct.slug}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedProductId(null);
+                            setSelectedProduct(null);
+                            searchProducts('');
+                          }}
+                          className="px-2.5 py-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 rounded-lg border border-emerald-200 dark:border-emerald-800 transition-colors"
+                        >
+                          Change
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedProductId(null);
+                            setSelectedProduct(null);
+                          }}
+                          className="p-1 text-gray-400 hover:text-red-600 rounded-lg transition-colors"
+                          title="Remove product link"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold text-gray-700 dark:text-slate-300">
+                        Search & Select a Product to Link:
+                      </label>
+                      <div className="relative">
+                        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <input
+                          type="text"
+                          placeholder="Search product by title, keyword, or village specialty..."
+                          value={productSearchQuery}
+                          onChange={(e) => {
+                            setProductSearchQuery(e.target.value);
+                            searchProducts(e.target.value);
+                          }}
+                          className="w-full pl-9 pr-4 py-2.5 text-xs rounded-xl border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:focus:ring-emerald-500"
+                        />
+                        {searchingProducts && (
+                          <Loader2 className="w-4 h-4 animate-spin absolute right-3 top-1/2 -translate-y-1/2 text-brand-600" />
+                        )}
+                      </div>
+
+                      {/* Product Search Results Dropdown List */}
+                      <div className="max-h-56 overflow-y-auto rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 divide-y divide-gray-100 dark:divide-slate-700/60 shadow-xs">
+                        {productSearchResults.length === 0 ? (
+                          <div className="p-4 text-center text-xs text-gray-400">
+                            {searchingProducts ? 'Searching products...' : 'No matching products found.'}
+                          </div>
+                        ) : (
+                          productSearchResults.map((prod) => (
+                            <div
+                              key={prod.id}
+                              onClick={() => {
+                                setSelectedProductId(prod.id);
+                                setSelectedProduct(prod);
+                                setLinkUrl(`/products/${prod.slug}`);
+                                if (!linkLabel || linkLabel === 'Explore →') {
+                                  setLinkLabel('Shop Now →');
+                                }
+                              }}
+                              className="p-2.5 flex items-center justify-between gap-3 hover:bg-emerald-50/70 dark:hover:bg-emerald-950/40 cursor-pointer transition-colors"
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                {prod.primaryImage ? (
+                                  <img
+                                    src={prod.primaryImage}
+                                    alt={prod.name}
+                                    className="w-8 h-8 rounded-lg object-cover border border-gray-200 dark:border-slate-700 shrink-0"
+                                  />
+                                ) : (
+                                  <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-gray-500 shrink-0">
+                                    <Package className="w-4 h-4" />
+                                  </div>
+                                )}
+                                <div className="min-w-0">
+                                  <p className="text-xs font-bold text-gray-900 dark:text-slate-100 truncate">
+                                    {prod.name}
+                                  </p>
+                                  <p className="text-[10px] text-gray-500 dark:text-slate-400 truncate">
+                                    {prod.sellerShopName} • Rs. {prod.price.toLocaleString()}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <button
+                                type="button"
+                                className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold shadow-xs transition-colors shrink-0"
+                              >
+                                Select
+                              </button>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Mode 2: Custom URL */}
+              {linkType === 'CUSTOM' && (
+                <div className="space-y-1.5">
+                  <Input
+                    label="Custom Page Link URL"
+                    placeholder="e.g. /products, /categories/spices, /sellers/yarl-nature"
+                    value={linkUrl}
+                    onChange={(e) => setLinkUrl(e.target.value)}
+                  />
+                  <p className="text-[10px] text-gray-500 dark:text-slate-400">
+                    Use relative paths (e.g. <code>/products</code>) or full URLs.
+                  </p>
+                </div>
+              )}
+
+              {/* Button Label & Presets (if button enabled) */}
+              {linkType !== 'NONE' && (
+                <div className="space-y-3 pt-2 border-t border-emerald-100 dark:border-emerald-900/40">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-gray-700 dark:text-slate-300">
+                        Action Button Label
+                      </label>
+                      <span className="text-[10px] text-gray-400 dark:text-slate-500">
+                        Quick presets below
+                      </span>
+                    </div>
+                    <Input
+                      placeholder="e.g. Shop Now →, View Product →, Order Today →"
+                      value={linkLabel}
+                      onChange={(e) => setLinkLabel(e.target.value)}
+                    />
+                  </div>
+
+                  {/* Preset Pills */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[10px] font-bold text-gray-500 dark:text-slate-400 mr-1">
+                      Presets:
+                    </span>
+                    {BUTTON_PRESETS.map((preset) => (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => setLinkLabel(preset)}
+                        className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-all ${
+                          linkLabel === preset
+                            ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                            : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-300 border-gray-200 dark:border-slate-700 hover:border-emerald-400'
+                        }`}
+                      >
+                        {preset}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Button Colors Customization */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold text-gray-700 dark:text-slate-300 block">
+                        Button Background Color
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="color"
+                          value={buttonColor}
+                          onChange={(e) => setButtonColor(e.target.value)}
+                          className="w-7 h-7 rounded-lg border border-gray-300 dark:border-slate-600 cursor-pointer p-0.5 bg-transparent shrink-0"
+                        />
+                        <input
+                          type="text"
+                          value={buttonColor}
+                          onChange={(e) => setButtonColor(e.target.value)}
+                          className="w-full text-[11px] font-mono rounded-lg border border-gray-300 dark:border-slate-700 p-1 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold text-gray-700 dark:text-slate-300 block">
+                        Button Text Color
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="color"
+                          value={buttonTextColor}
+                          onChange={(e) => setButtonTextColor(e.target.value)}
+                          className="w-7 h-7 rounded-lg border border-gray-300 dark:border-slate-600 cursor-pointer p-0.5 bg-transparent shrink-0"
+                        />
+                        <input
+                          type="text"
+                          value={buttonTextColor}
+                          onChange={(e) => setButtonTextColor(e.target.value)}
+                          className="w-full text-[11px] font-mono rounded-lg border border-gray-300 dark:border-slate-700 p-1 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Display & Speed Style */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-gray-700 dark:text-slate-300">Display Style</label>
                 <select
@@ -414,9 +1082,8 @@ export default function AdminAnnouncementsPage() {
                 </select>
               </div>
 
-              {/* Marquee Speed */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-700 dark:text-slate-300">Scroll Speed (Seconds)</label>
+                <label className="text-xs font-bold text-gray-700 dark:text-slate-300">Scroll Speed</label>
                 <select
                   value={speed}
                   disabled={!isMarquee}
@@ -431,28 +1098,502 @@ export default function AdminAnnouncementsPage() {
               </div>
             </div>
 
-            {/* Theme Selector */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-700 dark:text-slate-300 flex items-center gap-1.5">
-                <Palette className="w-3.5 h-3.5 text-brand-700 dark:text-emerald-400" /> Color Theme:
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2.5">
-                {THEME_OPTIONS.map((opt) => (
+            {/* Custom Theme & Background Customization Section */}
+            <div className="p-5 rounded-2xl bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700 space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-xs font-bold text-gray-900 dark:text-slate-100 flex items-center gap-1.5">
+                    <Sparkle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    Announcement Color Theme & Background
+                  </h3>
+                  <p className="text-[11px] text-gray-500 dark:text-slate-400">
+                    Choose a vibrant gradient theme, solid brand color, or an uploaded background image.
+                  </p>
+                </div>
+
+                {/* 3-Mode Toggle: Gradient Theme vs Solid Color vs Image */}
+                <div className="inline-flex p-1 bg-gray-200 dark:bg-slate-700 rounded-xl text-xs font-bold shrink-0">
                   <button
-                    key={opt.id}
                     type="button"
-                    onClick={() => setTheme(opt.id)}
-                    className={`p-2.5 rounded-xl border text-left transition-all ${
-                      theme === opt.id
-                        ? 'border-brand-600 dark:border-emerald-500 ring-2 ring-brand-500 dark:ring-emerald-400 shadow-sm'
-                        : 'border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600'
+                    onClick={() => {
+                      setBgType('GRADIENT');
+                      if (!bgColor.includes('gradient')) {
+                        setBgColor(GRADIENT_PRESETS[0].gradient);
+                      }
+                    }}
+                    className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
+                      bgType === 'GRADIENT'
+                        ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs'
+                        : 'text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200'
                     }`}
                   >
-                    <div className={`h-4 w-full rounded-md mb-1.5 ${opt.color}`} />
-                    <p className="text-[11px] font-bold text-gray-900 dark:text-slate-100 truncate">{opt.name}</p>
+                    <Sparkle className="w-3.5 h-3.5" />
+                    <span>Gradient Theme</span>
                   </button>
-                ))}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBgType('COLOR');
+                      if (bgColor.includes('gradient')) {
+                        setBgColor('#064e3b');
+                      }
+                    }}
+                    className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
+                      bgType === 'COLOR'
+                        ? 'bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 shadow-xs'
+                        : 'text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200'
+                    }`}
+                  >
+                    <Palette className="w-3.5 h-3.5" />
+                    <span>Solid Color</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBgType('IMAGE')}
+                    className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
+                      bgType === 'IMAGE'
+                        ? 'bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100 shadow-xs'
+                        : 'text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200'
+                    }`}
+                  >
+                    <ImageIcon className="w-3.5 h-3.5" />
+                    <span>Image</span>
+                  </button>
+                </div>
               </div>
+
+              {/* Option 1: Gradient Theme Mode */}
+              {bgType === 'GRADIENT' && (
+                <div className="space-y-4 pt-1">
+                  {/* Preset Gradients Grid */}
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold text-gray-700 dark:text-slate-300">
+                      Popular Gradient Themes:
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5">
+                      {GRADIENT_PRESETS.map((preset) => (
+                        <button
+                          key={preset.id}
+                          type="button"
+                          onClick={() => handleApplyGradientPreset(preset)}
+                          className={`p-2.5 rounded-xl border text-left transition-all ${
+                            bgColor === preset.gradient
+                              ? 'border-emerald-600 dark:border-emerald-500 ring-2 ring-emerald-500/30 dark:ring-emerald-400/30 shadow-sm'
+                              : 'border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600'
+                          }`}
+                        >
+                          <div
+                            className="h-6 w-full rounded-lg mb-1.5 shadow-xs border border-white/20"
+                            style={{ background: preset.gradient }}
+                          />
+                          <p className="text-[10px] font-bold text-gray-900 dark:text-slate-100 truncate">
+                            {preset.name}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Custom 2-Color Gradient Builder */}
+                  <div className="p-3.5 rounded-xl bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 space-y-3">
+                    <label className="text-[11px] font-bold text-gray-800 dark:text-slate-200 flex items-center gap-1.5">
+                      <Sliders className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                      Custom 2-Color Gradient Generator:
+                    </label>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {/* Start Color */}
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-medium text-gray-500 dark:text-slate-400 block">
+                          Start Color (From)
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="color"
+                            value={gradientColor1}
+                            onChange={(e) => handleUpdateCustomGradient(e.target.value, gradientColor2, gradientAngle)}
+                            className="w-7 h-7 rounded-lg border border-gray-300 dark:border-slate-600 cursor-pointer p-0.5 bg-transparent shrink-0"
+                          />
+                          <input
+                            type="text"
+                            value={gradientColor1}
+                            onChange={(e) => handleUpdateCustomGradient(e.target.value, gradientColor2, gradientAngle)}
+                            className="w-full text-[11px] font-mono rounded-lg border border-gray-300 dark:border-slate-700 p-1 bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100"
+                          />
+                        </div>
+                      </div>
+
+                      {/* End Color */}
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-medium text-gray-500 dark:text-slate-400 block">
+                          End Color (To)
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="color"
+                            value={gradientColor2}
+                            onChange={(e) => handleUpdateCustomGradient(gradientColor1, e.target.value, gradientAngle)}
+                            className="w-7 h-7 rounded-lg border border-gray-300 dark:border-slate-600 cursor-pointer p-0.5 bg-transparent shrink-0"
+                          />
+                          <input
+                            type="text"
+                            value={gradientColor2}
+                            onChange={(e) => handleUpdateCustomGradient(gradientColor1, e.target.value, gradientAngle)}
+                            className="w-full text-[11px] font-mono rounded-lg border border-gray-300 dark:border-slate-700 p-1 bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Direction */}
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-medium text-gray-500 dark:text-slate-400 block">
+                          Direction / Angle
+                        </span>
+                        <select
+                          value={gradientAngle}
+                          onChange={(e) => handleUpdateCustomGradient(gradientColor1, gradientColor2, e.target.value)}
+                          className="w-full text-[11px] rounded-lg border border-gray-300 dark:border-slate-700 p-1.5 bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100"
+                        >
+                          <option value="90deg">Horizontal (Left → Right)</option>
+                          <option value="135deg">Diagonal (Top-Left → Bottom-Right)</option>
+                          <option value="180deg">Vertical (Top → Bottom)</option>
+                          <option value="45deg">Diagonal (Bottom-Left → Top-Right)</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Text, Badge Colors */}
+                  <div className="space-y-2 pt-2 border-t border-gray-200/60 dark:border-slate-700/60">
+                    <label className="text-[11px] font-bold text-gray-700 dark:text-slate-300">
+                      Element Colors:
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {/* Text Color */}
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-medium text-gray-500 dark:text-slate-400 block">Text</span>
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="color"
+                            value={textColor}
+                            onChange={(e) => setTextColor(e.target.value)}
+                            className="w-7 h-7 rounded-lg border border-gray-300 dark:border-slate-600 cursor-pointer p-0.5 bg-transparent shrink-0"
+                          />
+                          <input
+                            type="text"
+                            value={textColor}
+                            onChange={(e) => setTextColor(e.target.value)}
+                            className="w-full text-[11px] font-mono rounded-lg border border-gray-300 dark:border-slate-700 p-1 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Accent / Badge Color */}
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-medium text-gray-500 dark:text-slate-400 block">Badge Tag</span>
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="color"
+                            value={accentColor}
+                            onChange={(e) => setAccentColor(e.target.value)}
+                            className="w-7 h-7 rounded-lg border border-gray-300 dark:border-slate-600 cursor-pointer p-0.5 bg-transparent shrink-0"
+                          />
+                          <input
+                            type="text"
+                            value={accentColor}
+                            onChange={(e) => setAccentColor(e.target.value)}
+                            className="w-full text-[11px] font-mono rounded-lg border border-gray-300 dark:border-slate-700 p-1 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Border Color */}
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-medium text-gray-500 dark:text-slate-400 block">Border (Optional)</span>
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="color"
+                            value={borderColor || '#000000'}
+                            onChange={(e) => setBorderColor(e.target.value)}
+                            className="w-7 h-7 rounded-lg border border-gray-300 dark:border-slate-600 cursor-pointer p-0.5 bg-transparent shrink-0"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Optional"
+                            value={borderColor}
+                            onChange={(e) => setBorderColor(e.target.value)}
+                            className="w-full text-[11px] font-mono rounded-lg border border-gray-300 dark:border-slate-700 p-1 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Option 2: Solid Color Mode */}
+              {bgType === 'COLOR' && (
+                <div className="space-y-4 pt-1">
+                  {/* Preset Themes Grid */}
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold text-gray-700 dark:text-slate-300">
+                      Solid Color Presets:
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
+                      {SOLID_PRESETS.map((preset) => (
+                        <button
+                          key={preset.id}
+                          type="button"
+                          onClick={() => handleApplySolidPreset(preset)}
+                          className={`p-2 rounded-xl border text-left transition-all ${
+                            bgColor === preset.color
+                              ? 'border-brand-600 dark:border-emerald-500 ring-2 ring-brand-500/30 dark:ring-emerald-400/30 shadow-xs'
+                              : 'border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600'
+                          }`}
+                        >
+                          <div
+                            className="h-5 w-full rounded-md mb-1.5 shadow-xs border border-black/10"
+                            style={{ backgroundColor: preset.color }}
+                          />
+                          <p className="text-[10px] font-bold text-gray-900 dark:text-slate-100 truncate">
+                            {preset.name}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Fine-Tuned Custom Color Pickers */}
+                  <div className="space-y-2 pt-2 border-t border-gray-200/60 dark:border-slate-700/60">
+                    <label className="text-[11px] font-bold text-gray-700 dark:text-slate-300">
+                      Fine-Tune Colors:
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {/* Background Color */}
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-medium text-gray-500 dark:text-slate-400 block">
+                          Background Color
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="color"
+                            value={bgColor}
+                            onChange={(e) => setBgColor(e.target.value)}
+                            className="w-7 h-7 rounded-lg border border-gray-300 dark:border-slate-600 cursor-pointer p-0.5 bg-transparent shrink-0"
+                          />
+                          <input
+                            type="text"
+                            value={bgColor}
+                            onChange={(e) => setBgColor(e.target.value)}
+                            className="w-full text-[11px] font-mono rounded-lg border border-gray-300 dark:border-slate-700 p-1 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Text Color */}
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-medium text-gray-500 dark:text-slate-400 block">
+                          Text Color
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="color"
+                            value={textColor}
+                            onChange={(e) => setTextColor(e.target.value)}
+                            className="w-7 h-7 rounded-lg border border-gray-300 dark:border-slate-600 cursor-pointer p-0.5 bg-transparent shrink-0"
+                          />
+                          <input
+                            type="text"
+                            value={textColor}
+                            onChange={(e) => setTextColor(e.target.value)}
+                            className="w-full text-[11px] font-mono rounded-lg border border-gray-300 dark:border-slate-700 p-1 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Accent / Badge Color */}
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-medium text-gray-500 dark:text-slate-400 block">
+                          Badge Tag
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="color"
+                            value={accentColor}
+                            onChange={(e) => setAccentColor(e.target.value)}
+                            className="w-7 h-7 rounded-lg border border-gray-300 dark:border-slate-600 cursor-pointer p-0.5 bg-transparent shrink-0"
+                          />
+                          <input
+                            type="text"
+                            value={accentColor}
+                            onChange={(e) => setAccentColor(e.target.value)}
+                            className="w-full text-[11px] font-mono rounded-lg border border-gray-300 dark:border-slate-700 p-1 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Option 3: Image Background Mode */}
+              {bgType === 'IMAGE' && (
+                <div className="space-y-4 pt-1">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Upload / Image Picker */}
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold text-gray-700 dark:text-slate-300 flex items-center justify-between">
+                        <span>Background Image:</span>
+                        {bgImage && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setBgImage('');
+                              setBgType('GRADIENT');
+                            }}
+                            className="text-red-600 hover:text-red-700 dark:text-red-400 text-[10px] font-semibold"
+                          >
+                            Remove Image
+                          </button>
+                        )}
+                      </label>
+
+                      {bgImage ? (
+                        <div className="relative rounded-2xl overflow-hidden border border-gray-200 dark:border-slate-700 h-28 group">
+                          <img
+                            src={bgImage}
+                            alt="Background Preview"
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => fileInputRef.current?.click()}
+                              className="px-3 py-1.5 bg-white/90 hover:bg-white text-gray-900 rounded-lg text-xs font-bold shadow-md flex items-center gap-1.5"
+                            >
+                              <RefreshCw className="w-3.5 h-3.5" /> Replace
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setBgImage('');
+                                setBgType('GRADIENT');
+                              }}
+                              className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold shadow-md flex items-center gap-1.5"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" /> Remove
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div
+                          onClick={() => fileInputRef.current?.click()}
+                          className="border-2 border-dashed border-gray-300 dark:border-slate-700 rounded-2xl p-6 text-center hover:border-brand-500 dark:hover:border-emerald-500 cursor-pointer bg-white dark:bg-slate-800 transition-colors"
+                        >
+                          <div className="flex flex-col items-center justify-center gap-1.5">
+                            {uploadingImage ? (
+                              <Loader2 className="w-6 h-6 animate-spin text-brand-600 dark:text-emerald-400" />
+                            ) : (
+                              <Upload className="w-6 h-6 text-gray-400 dark:text-slate-500" />
+                            )}
+                            <p className="text-xs font-bold text-gray-700 dark:text-slate-300">
+                              {uploadingImage ? 'Uploading image...' : 'Click or drop to upload background image'}
+                            </p>
+                            <p className="text-[10px] text-gray-400 dark:text-slate-500">
+                              PNG, JPG, WebP up to 5MB (Panoramic banner aspect ratio works best)
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                      />
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-medium text-gray-500 dark:text-slate-400">
+                          Or direct image URL:
+                        </label>
+                        <Input
+                          placeholder="e.g. /uploads/banner.jpg or https://..."
+                          value={bgImage}
+                          onChange={(e) => {
+                            setBgImage(e.target.value);
+                            if (e.target.value) setBgType('IMAGE');
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Image Settings: Overlay Opacity */}
+                    <div className="space-y-3">
+                      <div className="space-y-1.5 p-3 rounded-xl bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700">
+                        <div className="flex items-center justify-between text-xs font-bold text-gray-800 dark:text-slate-200">
+                          <span className="flex items-center gap-1">
+                            <Sliders className="w-3.5 h-3.5 text-brand-600 dark:text-emerald-400" />
+                            Dark Contrast Overlay Opacity:
+                          </span>
+                          <span className="font-mono text-brand-700 dark:text-emerald-400 font-black">
+                            {overlayOpacity}%
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min={20}
+                          max={95}
+                          step={5}
+                          value={overlayOpacity}
+                          onChange={(e) => setOverlayOpacity(Number(e.target.value))}
+                          className="w-full accent-brand-600 dark:accent-emerald-500 cursor-pointer"
+                        />
+                        <p className="text-[10px] text-gray-400 dark:text-slate-500">
+                          Darkens the image automatically so text and buttons remain easily readable on any image.
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <span className="text-[10px] font-medium text-gray-500 dark:text-slate-400 block">
+                            Text Color
+                          </span>
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="color"
+                              value={textColor}
+                              onChange={(e) => setTextColor(e.target.value)}
+                              className="w-6 h-6 rounded border border-gray-300 dark:border-slate-600 cursor-pointer p-0.5 bg-transparent"
+                            />
+                            <span className="text-[10px] font-mono text-gray-600 dark:text-slate-300 truncate">
+                              {textColor}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <span className="text-[10px] font-medium text-gray-500 dark:text-slate-400 block">
+                            Badge Color
+                          </span>
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="color"
+                              value={accentColor}
+                              onChange={(e) => setAccentColor(e.target.value)}
+                              className="w-6 h-6 rounded border border-gray-300 dark:border-slate-600 cursor-pointer p-0.5 bg-transparent"
+                            />
+                            <span className="text-[10px] font-mono text-gray-600 dark:text-slate-300 truncate">
+                              {accentColor}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Active Switch & Actions */}
@@ -495,7 +1636,7 @@ export default function AdminAnnouncementsPage() {
               All Announcements ({announcements.length})
             </h2>
             <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">
-              All active announcements created by Admin and Sellers are broadcast in sequence on the top marquee bar.
+              All active announcements created by Admin and Sellers are broadcast on the top marquee bar.
             </p>
           </div>
         </div>
@@ -513,6 +1654,9 @@ export default function AdminAnnouncementsPage() {
           <div className="divide-y divide-gray-100 dark:divide-slate-800">
             {announcements.map((item) => {
               const isDeletingThis = deletingIds.includes(item.id);
+              const isImageBg = item.bgType === 'IMAGE' && Boolean(item.bgImage);
+              const isGradient = item.bgType === 'GRADIENT' || (item.bgColor && item.bgColor.includes('gradient'));
+
               return (
                 <div
                   key={item.id}
@@ -532,115 +1676,160 @@ export default function AdminAnnouncementsPage() {
                             : 'bg-amber-100/70 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800/60'
                         }`}
                       >
-                      {item.isActive ? (
-                        <>
-                          <span className="w-2 h-2 rounded-full bg-emerald-600 dark:bg-emerald-400 animate-pulse" />
-                          <span>Active on Store</span>
-                        </>
+                        {item.isActive ? (
+                          <>
+                            <span className="w-2 h-2 rounded-full bg-emerald-600 dark:bg-emerald-400 animate-pulse" />
+                            <span>Active on Store</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="w-2 h-2 rounded-full bg-amber-500 dark:bg-amber-400" />
+                            <span>Stopped / Hidden</span>
+                          </>
+                        )}
+                      </span>
+
+                      {/* Creator / Origin Badge */}
+                      {item.sellerShopName || item.sellerId ? (
+                        <span className="bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60 px-2.5 py-0.5 rounded-full text-[11px] font-semibold flex items-center gap-1">
+                          <Store className="w-3 h-3" />
+                          <span>Seller: {item.sellerShopName || `Shop #${item.sellerId}`}</span>
+                        </span>
                       ) : (
-                        <>
-                          <span className="w-2 h-2 rounded-full bg-amber-500 dark:bg-amber-400" />
-                          <span>Stopped / Hidden</span>
-                        </>
+                        <span className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 px-2.5 py-0.5 rounded-full text-[11px] font-semibold">
+                          🛡️ Admin Broadcast
+                        </span>
                       )}
-                    </span>
 
-                    {/* Creator / Origin Badge */}
-                    {item.sellerShopName || item.sellerId ? (
-                      <span className="bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60 px-2.5 py-0.5 rounded-full text-[11px] font-semibold flex items-center gap-1">
-                        <Store className="w-3 h-3" />
-                        <span>Seller: {item.sellerShopName || `Shop #${item.sellerId}`}</span>
+                      {/* Mode Badge */}
+                      <span className="bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 px-2.5 py-0.5 rounded-full text-[10px] font-semibold">
+                        {item.isMarquee ? '🔄 Scrolling Marquee' : '📌 Static Banner'}
                       </span>
-                    ) : (
-                      <span className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 px-2.5 py-0.5 rounded-full text-[11px] font-semibold">
-                        🛡️ Admin Broadcast
-                      </span>
-                    )}
 
-                    {/* Mode Badge */}
-                    <span className="bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 px-2.5 py-0.5 rounded-full text-[10px] font-semibold">
-                      {item.isMarquee ? '🔄 Scrolling Marquee' : '📌 Static Banner'}
-                    </span>
-
-                    {/* Theme Badge */}
-                    <span className="capitalize text-gray-500 dark:text-slate-400 text-[11px] font-medium">
-                      Theme: <strong className="text-gray-900 dark:text-slate-200">{item.theme}</strong>
-                    </span>
-                  </div>
-
-                  <div>
-                    {item.title && (
-                      <span className="text-xs font-bold text-gray-900 dark:text-slate-100 mr-2 bg-gray-100 dark:bg-slate-800 px-2 py-0.5 rounded-md border border-gray-200 dark:border-slate-700">
-                        {item.title}
-                      </span>
-                    )}
-                    <span className="text-xs font-semibold text-gray-800 dark:text-slate-200 leading-relaxed">
-                      {item.content}
-                    </span>
-                  </div>
-
-                  {item.contentTamil && (
-                    <p className="text-xs font-tamil text-gray-500 dark:text-slate-400">
-                      {item.contentTamil}
-                    </p>
-                  )}
-
-                  {item.linkUrl && (
-                    <div className="flex items-center gap-1 text-[11px] text-brand-700 dark:text-emerald-400 font-semibold">
-                      <ExternalLink className="w-3 h-3" />
-                      <span>Link: {item.linkUrl} ({item.linkLabel || 'Button'})</span>
+                      {/* Theme / BG Preview Badge */}
+                      {isImageBg ? (
+                        <span className="inline-flex items-center gap-1.5 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60 px-2.5 py-0.5 rounded-full text-[10px] font-semibold">
+                          <ImageIcon className="w-3 h-3" />
+                          <span>Image BG</span>
+                          {item.bgImage && (
+                            <img
+                              src={item.bgImage}
+                              alt="thumb"
+                              className="w-3.5 h-3.5 rounded-full object-cover border border-indigo-300"
+                            />
+                          )}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 border border-gray-200 dark:border-slate-700 px-2.5 py-0.5 rounded-full text-[10px] font-semibold">
+                          <span
+                            className="w-4 h-3 rounded-md border border-black/20 shrink-0 shadow-2xs"
+                            style={{ background: item.bgColor || 'linear-gradient(90deg, #022c22, #065f46)' }}
+                          />
+                          <span>{isGradient ? 'Gradient Theme' : item.theme}</span>
+                        </span>
+                      )}
                     </div>
-                  )}
-                </div>
 
-                {/* Explicit Action Controls: Stop / Start, Edit, Delete */}
-                <div className="flex items-center gap-2 shrink-0 pt-3 lg:pt-0 border-t lg:border-t-0 border-gray-100 dark:border-slate-800 flex-wrap">
-                  {item.isActive ? (
+                    <div>
+                      {item.title && (
+                        <span className="text-xs font-bold text-gray-900 dark:text-slate-100 mr-2 bg-gray-100 dark:bg-slate-800 px-2 py-0.5 rounded-md border border-gray-200 dark:border-slate-700">
+                          {item.title}
+                        </span>
+                      )}
+                      <span className="text-xs font-semibold text-gray-800 dark:text-slate-200 leading-relaxed">
+                        {item.content}
+                      </span>
+                    </div>
+
+                    {item.contentTamil && (
+                      <p className="text-xs font-tamil text-gray-500 dark:text-slate-400">
+                        {item.contentTamil}
+                      </p>
+                    )}
+
+                    {/* Linked Product / URL & Action Button Preview */}
+                    <div className="flex items-center gap-3 flex-wrap pt-1">
+                      {item.productName ? (
+                        <Link
+                          href={item.linkUrl || `/products/${item.productSlug}`}
+                          target="_blank"
+                          className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/60 px-2.5 py-0.5 rounded-full hover:underline shadow-2xs"
+                        >
+                          <ShoppingBag className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                          <span>Product: {item.productName} {item.productPrice ? `(Rs. ${item.productPrice.toLocaleString()})` : ''}</span>
+                          <ExternalLink className="w-2.5 h-2.5 opacity-70" />
+                        </Link>
+                      ) : item.linkUrl ? (
+                        <div className="flex items-center gap-1 text-[11px] text-brand-700 dark:text-emerald-400 font-semibold">
+                          <ExternalLink className="w-3 h-3" />
+                          <span>Link: {item.linkUrl}</span>
+                        </div>
+                      ) : null}
+
+                      {item.linkLabel && (
+                        <span
+                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border shadow-2xs"
+                          style={{
+                            backgroundColor: item.buttonColor || '#059669',
+                            color: item.buttonTextColor || '#ffffff',
+                            borderColor: item.borderColor || item.buttonColor || 'rgba(255,255,255,0.3)',
+                          }}
+                        >
+                          <span>{item.linkLabel}</span>
+                          <ArrowRight className="w-2.5 h-2.5" />
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Explicit Action Controls: Stop / Start, Edit, Delete */}
+                  <div className="flex items-center gap-2 shrink-0 pt-3 lg:pt-0 border-t lg:border-t-0 border-gray-100 dark:border-slate-800 flex-wrap">
+                    {item.isActive ? (
+                      <button
+                        type="button"
+                        onClick={() => handleToggleStatus(item, false)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/60 transition-all shadow-xs active:scale-95"
+                        title="Temporarily stop and hide announcement from top bar"
+                      >
+                        <Pause className="w-3.5 h-3.5 fill-current" />
+                        <span>Stop</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleToggleStatus(item, true)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-all shadow-xs active:scale-95"
+                        title="Start and display announcement live on top bar"
+                      >
+                        <Play className="w-3.5 h-3.5 fill-current" />
+                        <span>Start / Resume</span>
+                      </button>
+                    )}
+
                     <button
                       type="button"
-                      onClick={() => handleToggleStatus(item, false)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/60 transition-all shadow-xs active:scale-95"
-                      title="Temporarily stop and hide announcement from top bar"
+                      onClick={() => handleOpenEdit(item)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold text-xs bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 border border-gray-200 dark:border-slate-700 hover:bg-gray-200 dark:hover:bg-slate-700 transition-all shadow-xs active:scale-95"
+                      title="Edit announcement details"
                     >
-                      <Pause className="w-3.5 h-3.5 fill-current" />
-                      <span>Stop</span>
+                      <Edit2 className="w-3.5 h-3.5" />
+                      <span>Edit</span>
                     </button>
-                  ) : (
+
                     <button
                       type="button"
-                      onClick={() => handleToggleStatus(item, true)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-all shadow-xs active:scale-95"
-                      title="Start and display announcement live on top bar"
+                      onClick={() => setDeleteModalId(item.id)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold text-xs bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/50 hover:bg-red-100 dark:hover:bg-red-900/60 transition-all shadow-xs active:scale-95"
+                      title="Permanently delete announcement"
                     >
-                      <Play className="w-3.5 h-3.5 fill-current" />
-                      <span>Start / Resume</span>
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Delete</span>
                     </button>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={() => handleOpenEdit(item)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold text-xs bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 border border-gray-200 dark:border-slate-700 hover:bg-gray-200 dark:hover:bg-slate-700 transition-all shadow-xs active:scale-95"
-                    title="Edit announcement details"
-                  >
-                    <Edit2 className="w-3.5 h-3.5" />
-                    <span>Edit</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setDeleteModalId(item.id)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold text-xs bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/50 hover:bg-red-100 dark:hover:bg-red-900/60 transition-all shadow-xs active:scale-95"
-                    title="Permanently delete announcement"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    <span>Delete</span>
-                  </button>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
         )}
       </div>
 
@@ -659,3 +1848,6 @@ export default function AdminAnnouncementsPage() {
     </div>
   );
 }
+
+
+

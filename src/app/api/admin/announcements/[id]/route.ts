@@ -1,4 +1,4 @@
-﻿import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { requireRole } from '@/lib/auth';
 
@@ -22,12 +22,35 @@ export async function PATCH(
     }
 
     const updateData: any = {};
+    if (body.productId !== undefined) {
+      if (body.productId) {
+        const prod = await prisma.product.findUnique({
+          where: { id: BigInt(body.productId) },
+          select: { id: true },
+        });
+        if (!prod) {
+          return NextResponse.json({ error: 'Selected linked product not found' }, { status: 400 });
+        }
+        updateData.productId = prod.id;
+      } else {
+        updateData.productId = null;
+      }
+    }
     if (body.title !== undefined) updateData.title = body.title ? body.title.trim() : null;
     if (body.content !== undefined) updateData.content = body.content.trim();
     if (body.contentTamil !== undefined) updateData.contentTamil = body.contentTamil ? body.contentTamil.trim() : null;
     if (body.linkUrl !== undefined) updateData.linkUrl = body.linkUrl ? body.linkUrl.trim() : null;
     if (body.linkLabel !== undefined) updateData.linkLabel = body.linkLabel ? body.linkLabel.trim() : null;
     if (body.theme !== undefined) updateData.theme = body.theme;
+    if (body.bgType !== undefined) updateData.bgType = body.bgType;
+    if (body.bgColor !== undefined) updateData.bgColor = body.bgColor ? body.bgColor.trim() : null;
+    if (body.textColor !== undefined) updateData.textColor = body.textColor ? body.textColor.trim() : null;
+    if (body.accentColor !== undefined) updateData.accentColor = body.accentColor ? body.accentColor.trim() : null;
+    if (body.borderColor !== undefined) updateData.borderColor = body.borderColor ? body.borderColor.trim() : null;
+    if (body.buttonColor !== undefined) updateData.buttonColor = body.buttonColor ? body.buttonColor.trim() : null;
+    if (body.buttonTextColor !== undefined) updateData.buttonTextColor = body.buttonTextColor ? body.buttonTextColor.trim() : null;
+    if (body.bgImage !== undefined) updateData.bgImage = body.bgImage ? body.bgImage.trim() : null;
+    if (body.overlayOpacity !== undefined) updateData.overlayOpacity = Number(body.overlayOpacity);
     if (body.isMarquee !== undefined) updateData.isMarquee = Boolean(body.isMarquee);
     if (body.speed !== undefined) updateData.speed = Number(body.speed);
     if (body.isActive !== undefined) updateData.isActive = Boolean(body.isActive);
@@ -37,6 +60,11 @@ export async function PATCH(
     const updated = await prisma.announcement.update({
       where: { id: targetId },
       data: updateData,
+      include: {
+        product: {
+          select: { id: true, name: true, slug: true, price: true },
+        },
+      },
     });
 
     return NextResponse.json({
@@ -44,12 +72,25 @@ export async function PATCH(
       announcement: {
         id: updated.id.toString(),
         sellerId: updated.sellerId?.toString() || null,
+        productId: updated.productId?.toString() || null,
+        productName: updated.product?.name || null,
+        productSlug: updated.product?.slug || null,
+        productPrice: updated.product?.price ? Number(updated.product.price) : null,
         title: updated.title,
         content: updated.content,
         contentTamil: updated.contentTamil,
-        linkUrl: updated.linkUrl,
+        linkUrl: updated.product?.slug ? `/products/${updated.product.slug}` : (updated.linkUrl || null),
         linkLabel: updated.linkLabel,
         theme: updated.theme,
+        bgType: updated.bgType,
+        bgColor: updated.bgColor,
+        textColor: updated.textColor,
+        accentColor: updated.accentColor,
+        borderColor: updated.borderColor,
+        buttonColor: updated.buttonColor,
+        buttonTextColor: updated.buttonTextColor,
+        bgImage: updated.bgImage,
+        overlayOpacity: updated.overlayOpacity,
         isMarquee: updated.isMarquee,
         speed: updated.speed,
         isActive: updated.isActive,

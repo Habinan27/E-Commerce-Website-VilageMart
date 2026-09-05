@@ -9,12 +9,25 @@ export interface AnnouncementItem {
   sellerId?: string | null;
   sellerShopName?: string | null;
   sellerSlug?: string | null;
+  productId?: string | null;
+  productName?: string | null;
+  productSlug?: string | null;
+  productPrice?: number | null;
   title?: string | null;
   content: string;
   contentTamil?: string | null;
   linkUrl?: string | null;
   linkLabel?: string | null;
   theme: string;
+  bgType?: string | null;
+  bgColor?: string | null;
+  textColor?: string | null;
+  accentColor?: string | null;
+  borderColor?: string | null;
+  buttonColor?: string | null;
+  buttonTextColor?: string | null;
+  bgImage?: string | null;
+  overlayOpacity?: number | null;
   isMarquee: boolean;
   speed: number;
   isActive: boolean;
@@ -26,63 +39,7 @@ interface AnnouncementBarProps {
   initialAnnouncement?: AnnouncementItem | null;
 }
 
-const THEME_CLASSES: Record<string, { bar: string; badge: string; linkBtn: string }> = {
-  emerald: {
-    bar: 'bg-emerald-800 dark:bg-emerald-950 text-emerald-50 border-b border-emerald-700/50',
-    badge: 'bg-emerald-950/70 text-emerald-200 border border-emerald-700/80',
-    linkBtn: 'bg-emerald-700 hover:bg-emerald-600 text-white border border-emerald-600/60 shadow-sm',
-  },
-  amber: {
-    bar: 'bg-amber-700 dark:bg-amber-950 text-amber-50 border-b border-amber-600/50',
-    badge: 'bg-amber-900/70 text-amber-200 border border-amber-500/80',
-    linkBtn: 'bg-amber-800 hover:bg-amber-700 text-white border border-amber-500/60 shadow-sm',
-  },
-  brand: {
-    bar: 'bg-brand-900 dark:bg-slate-950 text-brand-50 border-b border-brand-800/60',
-    badge: 'bg-brand-950/80 text-brand-200 border border-brand-700',
-    linkBtn: 'bg-brand-800 hover:bg-brand-700 text-white border border-brand-600/60 shadow-sm',
-  },
-  indigo: {
-    bar: 'bg-indigo-700 dark:bg-indigo-950 text-indigo-50 border-b border-indigo-600/50',
-    badge: 'bg-indigo-900/70 text-indigo-200 border border-indigo-500/80',
-    linkBtn: 'bg-indigo-600 hover:bg-indigo-500 text-white border border-indigo-400/60 shadow-sm',
-  },
-  blue: {
-    bar: 'bg-blue-800 dark:bg-blue-950 text-blue-50 border-b border-blue-700/50',
-    badge: 'bg-blue-950/80 text-blue-200 border border-blue-600/80',
-    linkBtn: 'bg-blue-700 hover:bg-blue-600 text-white border border-blue-500/60 shadow-sm',
-  },
-  purple: {
-    bar: 'bg-purple-800 dark:bg-purple-950 text-purple-50 border-b border-purple-700/50',
-    badge: 'bg-purple-950/80 text-purple-200 border border-purple-600/80',
-    linkBtn: 'bg-purple-700 hover:bg-purple-600 text-white border border-purple-500/60 shadow-sm',
-  },
-  rose: {
-    bar: 'bg-rose-700 dark:bg-rose-950 text-rose-50 border-b border-rose-600/50',
-    badge: 'bg-rose-900/70 text-rose-200 border border-rose-500/80',
-    linkBtn: 'bg-rose-600 hover:bg-rose-500 text-white border border-rose-400/60 shadow-sm',
-  },
-  red: {
-    bar: 'bg-rose-800 dark:bg-rose-950 text-rose-50 border-b border-rose-700/50',
-    badge: 'bg-rose-950/80 text-rose-200 border border-rose-600/80',
-    linkBtn: 'bg-rose-700 hover:bg-rose-600 text-white border border-rose-500/60 shadow-sm',
-  },
-  slate: {
-    bar: 'bg-slate-900 dark:bg-slate-950 text-slate-100 border-b border-slate-800',
-    badge: 'bg-slate-800 text-slate-300 border border-slate-700',
-    linkBtn: 'bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-600 shadow-sm',
-  },
-  gold: {
-    bar: 'bg-yellow-800 dark:bg-yellow-950 text-yellow-50 border-b border-yellow-700/50',
-    badge: 'bg-yellow-950/80 text-yellow-200 border border-yellow-600/80',
-    linkBtn: 'bg-yellow-700 hover:bg-yellow-600 text-white border border-yellow-500/60 shadow-sm',
-  },
-  gradient: {
-    bar: 'bg-gradient-to-r from-emerald-900 via-amber-800 to-emerald-900 text-white border-b border-amber-600/40',
-    badge: 'bg-black/40 text-amber-200 border border-white/20',
-    linkBtn: 'bg-white/20 hover:bg-white/30 text-white border border-white/30 backdrop-blur-sm shadow-sm',
-  },
-};
+const DEFAULT_GRADIENT = 'linear-gradient(90deg, #022c22 0%, #065f46 50%, #022c22 100%)';
 
 export function AnnouncementBar({ initialAnnouncements, initialAnnouncement }: AnnouncementBarProps) {
   const initialList = initialAnnouncements || (initialAnnouncement ? [initialAnnouncement] : []);
@@ -122,7 +79,6 @@ export function AnnouncementBar({ initialAnnouncements, initialAnnouncement }: A
 
   const activeList = announcements.filter((a) => a.isActive);
 
-  // Keep a cached copy of the last known active list so exiting/closing animations don't abruptly blank out
   useEffect(() => {
     if (activeList.length > 0) {
       setLastActiveList(activeList);
@@ -134,13 +90,11 @@ export function AnnouncementBar({ initialAnnouncements, initialAnnouncement }: A
 
   if (renderList.length === 0) return null;
 
-  // Single static banner check (only when 1 item and marquee is explicitly set to false)
-  const isStaticSingle = renderList.length === 1 && renderList[0].isMarquee === false;
+  const isSingle = renderList.length === 1;
+  const isStaticSingle = isSingle && renderList[0].isMarquee === false;
+  const primaryItem = renderList[0];
 
-  const primaryThemeKey = renderList[0]?.theme || 'emerald';
-  const primaryTheme = THEME_CLASSES[primaryThemeKey] || THEME_CLASSES.emerald;
-
-  // For continuous seamless marquee loop (0% -> -50%):
+  // Build repeat loop for seamless non-stop marquee
   let repeatCount = 1;
   if (renderList.length === 1) {
     repeatCount = 6;
@@ -157,32 +111,80 @@ export function AnnouncementBar({ initialAnnouncements, initialAnnouncement }: A
     loopSet.push(...renderList);
   }
 
-  // Calculate speed based on total number of items in the set
   const baseSpeed = renderList.reduce((acc, it) => acc + (it.speed || 28), 0) / renderList.length;
   const totalDuration = Math.max(22, Math.round(baseSpeed * (loopSet.length / 2)));
 
+  // Calculate Bar Container Background (Gradient / Solid / Image)
+  const barContainerStyle: React.CSSProperties = {};
+  const isImageBg = primaryItem?.bgType === 'IMAGE' && Boolean(primaryItem?.bgImage);
+
+  if (isImageBg && primaryItem?.bgImage) {
+    barContainerStyle.backgroundImage = `url("${primaryItem.bgImage}")`;
+    barContainerStyle.backgroundSize = 'cover';
+    barContainerStyle.backgroundPosition = 'center';
+  } else if (primaryItem?.bgColor) {
+    barContainerStyle.background = primaryItem.bgColor;
+  } else {
+    barContainerStyle.background = DEFAULT_GRADIENT;
+  }
+
+  if (primaryItem?.borderColor) {
+    barContainerStyle.borderColor = primaryItem.borderColor;
+  }
+
+  const overlayOpacity =
+    (primaryItem?.overlayOpacity !== undefined && primaryItem?.overlayOpacity !== null
+      ? primaryItem.overlayOpacity
+      : 60) / 100;
+
   const renderItemContent = (item: AnnouncementItem, keyPrefix: string, index: number) => {
-    const itemTheme = THEME_CLASSES[item.theme] || THEME_CLASSES.emerald;
     const badgeText = item.title || (item.sellerShopName ? `🌾 ${item.sellerShopName}` : null);
 
+    const badgeStyle: React.CSSProperties = item.accentColor
+      ? {
+          backgroundColor: item.accentColor,
+          borderColor: item.borderColor || item.accentColor,
+          color: '#ffffff',
+        }
+      : {
+          backgroundColor: 'rgba(0, 0, 0, 0.4)',
+          borderColor: 'rgba(255, 255, 255, 0.25)',
+          color: '#ffffff',
+        };
+
+    const textStyle: React.CSSProperties = item.textColor ? { color: item.textColor } : { color: '#ffffff' };
+
+    const buttonStyle: React.CSSProperties = {
+      backgroundColor: item.buttonColor || 'rgba(255, 255, 255, 0.22)',
+      borderColor: item.borderColor || item.buttonColor || 'rgba(255, 255, 255, 0.3)',
+      color: item.buttonTextColor || '#ffffff',
+    };
+
     return (
-      <div key={`${keyPrefix}-${item.id}-${index}`} className="flex items-center gap-4 shrink-0">
+      <div
+        key={`${keyPrefix}-${item.id}-${index}`}
+        className="inline-flex items-center gap-2.5 sm:gap-3 px-4 shrink-0 transition-opacity duration-200"
+      >
         {badgeText && (
           <span
-            className={`px-2 py-0.5 rounded-md font-bold text-[10px] tracking-wide uppercase shrink-0 transition-colors duration-200 ${itemTheme.badge}`}
+            className="px-2.5 py-0.5 rounded-md font-bold text-[10px] tracking-wide uppercase shrink-0 shadow-xs border"
+            style={badgeStyle}
           >
             {badgeText}
           </span>
         )}
 
-        <span className="font-semibold text-xs tracking-tight text-white/95 dark:text-emerald-50">
+        <span className="font-semibold text-xs tracking-tight text-white/95" style={textStyle}>
           {item.content}
         </span>
 
         {item.contentTamil && (
           <>
-            <span className="opacity-40 select-none">•</span>
-            <span className="font-medium text-xs font-tamil tracking-normal text-white/85 dark:text-emerald-100/90">
+            <span className="opacity-40 select-none text-white/70">•</span>
+            <span
+              className="font-medium text-xs font-tamil tracking-normal text-white/90"
+              style={textStyle}
+            >
               {item.contentTamil}
             </span>
           </>
@@ -191,31 +193,42 @@ export function AnnouncementBar({ initialAnnouncements, initialAnnouncement }: A
         {item.linkUrl && (
           <Link
             href={item.linkUrl}
-            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-bold text-[11px] transition-all duration-150 ml-1 hover:scale-105 active:scale-95 ${itemTheme.linkBtn}`}
+            className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full font-bold text-[11px] transition-all duration-150 ml-1.5 hover:brightness-110 hover:shadow-md border shadow-xs backdrop-blur-xs select-none shrink-0"
+            style={buttonStyle}
+            onClick={(e) => e.stopPropagation()}
           >
-            <span>{item.linkLabel || 'Explore Now'}</span>
-            <ArrowRight className="w-3 h-3" />
+            <span>{item.linkLabel || 'Explore →'}</span>
+            <ArrowRight className="w-3 h-3 shrink-0" />
           </Link>
         )}
 
-        <span className="opacity-35 mx-3 select-none text-[10px]">✦</span>
+        <span className="opacity-30 select-none text-[10px] text-white ml-2">✦</span>
       </div>
     );
   };
 
   return (
     <div
-      className={`announcement-marquee-container group relative overflow-hidden z-40 transition-all duration-300 ease-in-out text-xs font-medium ${primaryTheme.bar} ${
+      className={`announcement-marquee-container group relative overflow-hidden z-40 transition-all duration-300 ease-in-out text-xs font-medium border-b border-black/20 text-white ${
         isVisible
           ? 'max-h-16 opacity-100 translate-y-0'
           : 'max-h-0 opacity-0 -translate-y-2 pointer-events-none py-0 my-0 border-b-0'
       }`}
+      style={barContainerStyle}
     >
+      {/* Background Overlay for Image Banner */}
+      {isImageBg && (
+        <div
+          className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/70 to-black/85 pointer-events-none transition-opacity duration-300 z-0"
+          style={{ opacity: overlayOpacity }}
+        />
+      )}
+
       {!isStaticSingle ? (
         // Continuous Non-Stop Seamless Scrolling Marquee Loop with Instant Hover Freeze
-        <div className="relative flex items-center py-2 sm:py-2.5 overflow-hidden select-none">
+        <div className="relative z-10 flex items-center py-2 sm:py-2.5 overflow-hidden select-none">
           <div
-            className="flex items-center whitespace-nowrap will-change-transform animate-marquee transition-opacity duration-300"
+            className="flex items-center whitespace-nowrap will-change-transform animate-marquee transition-opacity duration-300 gap-0"
             style={{ animationDuration: `${totalDuration}s` }}
           >
             {/* Set 1 (First Half - 0% to -50%) */}
@@ -233,7 +246,7 @@ export function AnnouncementBar({ initialAnnouncements, initialAnnouncement }: A
           <button
             type="button"
             onClick={() => setDismissed(true)}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md text-white/70 hover:text-white hover:bg-black/20 dark:hover:bg-white/10 transition-colors duration-150 z-10"
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md text-white/70 hover:text-white hover:bg-black/40 transition-colors duration-150 z-20"
             title="Close banner"
             aria-label="Close announcement bar"
           >
@@ -242,30 +255,54 @@ export function AnnouncementBar({ initialAnnouncements, initialAnnouncement }: A
         </div>
       ) : (
         // Static Centered Banner Mode (only when 1 single static announcement is active)
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 sm:py-2.5 flex items-center justify-between gap-4">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 sm:py-2.5 flex items-center justify-between gap-4">
           <div className="flex-1 flex items-center justify-center flex-wrap gap-2 sm:gap-3 text-center">
-            {(renderList[0]?.title || renderList[0]?.sellerShopName) && (
+            {(primaryItem?.title || primaryItem?.sellerShopName) && (
               <span
-                className={`px-2 py-0.5 rounded-md font-bold text-[10px] tracking-wide uppercase shrink-0 transition-colors duration-200 ${primaryTheme.badge}`}
+                className="px-2.5 py-0.5 rounded-md font-bold text-[10px] tracking-wide uppercase shrink-0 border shadow-xs"
+                style={
+                  primaryItem.accentColor
+                    ? {
+                        backgroundColor: primaryItem.accentColor,
+                        borderColor: primaryItem.borderColor || primaryItem.accentColor,
+                        color: '#ffffff',
+                      }
+                    : {
+                        backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                        borderColor: 'rgba(255, 255, 255, 0.25)',
+                        color: '#ffffff',
+                      }
+                }
               >
-                {renderList[0]?.title || `🌾 ${renderList[0]?.sellerShopName}`}
+                {primaryItem.title || `🌾 ${primaryItem.sellerShopName}`}
               </span>
             )}
-            <span className="font-semibold text-xs tracking-tight">
-              {renderList[0]?.content}
+            <span
+              className="font-semibold text-xs tracking-tight text-white/95"
+              style={primaryItem?.textColor ? { color: primaryItem.textColor } : undefined}
+            >
+              {primaryItem?.content}
             </span>
-            {renderList[0]?.contentTamil && (
-              <span className="font-medium text-xs font-tamil hidden md:inline">
-                {renderList[0]?.contentTamil}
+            {primaryItem?.contentTamil && (
+              <span
+                className="font-medium text-xs font-tamil hidden md:inline opacity-90 text-white/90"
+                style={primaryItem?.textColor ? { color: primaryItem.textColor } : undefined}
+              >
+                {primaryItem.contentTamil}
               </span>
             )}
-            {renderList[0]?.linkUrl && (
+            {primaryItem?.linkUrl && (
               <Link
-                href={renderList[0].linkUrl}
-                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-bold text-[11px] transition-all duration-150 ml-1 hover:scale-105 active:scale-95 ${primaryTheme.linkBtn}`}
+                href={primaryItem.linkUrl}
+                className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full font-bold text-[11px] transition-all duration-150 ml-1 hover:brightness-110 hover:shadow-md border shadow-xs"
+                style={{
+                  backgroundColor: primaryItem.buttonColor || 'rgba(255, 255, 255, 0.22)',
+                  borderColor: primaryItem.borderColor || primaryItem.buttonColor || 'rgba(255, 255, 255, 0.3)',
+                  color: primaryItem.buttonTextColor || '#ffffff',
+                }}
               >
-                <span>{renderList[0].linkLabel || 'Explore Now'}</span>
-                <ArrowRight className="w-3 h-3" />
+                <span>{primaryItem.linkLabel || 'Explore Now →'}</span>
+                <ArrowRight className="w-3 h-3 shrink-0" />
               </Link>
             )}
           </div>
@@ -273,7 +310,7 @@ export function AnnouncementBar({ initialAnnouncements, initialAnnouncement }: A
           <button
             type="button"
             onClick={() => setDismissed(true)}
-            className="p-1 rounded-md text-white/70 hover:text-white hover:bg-black/20 dark:hover:bg-white/10 transition-colors duration-150 shrink-0"
+            className="p-1 rounded-md text-white/70 hover:text-white hover:bg-black/40 transition-colors duration-150 shrink-0"
             title="Close banner"
             aria-label="Close announcement bar"
           >
@@ -284,3 +321,4 @@ export function AnnouncementBar({ initialAnnouncements, initialAnnouncement }: A
     </div>
   );
 }
+
