@@ -87,12 +87,12 @@ export function Footer() {
           <div>
             <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-3">Popular Categories</h3>
             <ul className="space-y-2 text-xs">
-              <li><Link href="/products?category=traditional-foods" className="hover:text-white transition">Traditional Foods (பனங்கற்கண்டு)</Link></li>
-              <li><Link href="/products?category=honey" className="hover:text-white transition">Pure Honey (தேன்)</Link></li>
-              <li><Link href="/products?category=rice-grains" className="hover:text-white transition">Traditional Rice (அரிசி)</Link></li>
-              <li><Link href="/products?category=coconut-products" className="hover:text-white transition">Coconut Oil</Link></li>
-              <li><Link href="/products?category=handmade-products" className="hover:text-white transition">Handmade Baskets & Crafts</Link></li>
-              <li><Link href="/products?category=spices" className="hover:text-white transition">Local Spices</Link></li>
+              <li><Link href="/products?category=traditional-foods" className="hover:text-emerald-400 hover:translate-x-0.5 inline-block transition-all duration-150 ease-out">Traditional Foods (பனங்கற்கண்டு)</Link></li>
+              <li><Link href="/products?category=honey" className="hover:text-emerald-400 hover:translate-x-0.5 inline-block transition-all duration-150 ease-out">Pure Honey (தேன்)</Link></li>
+              <li><Link href="/products?category=rice-grains" className="hover:text-emerald-400 hover:translate-x-0.5 inline-block transition-all duration-150 ease-out">Traditional Rice (அரிசி)</Link></li>
+              <li><Link href="/products?category=coconut-products" className="hover:text-emerald-400 hover:translate-x-0.5 inline-block transition-all duration-150 ease-out">Coconut Oil</Link></li>
+              <li><Link href="/products?category=handmade-products" className="hover:text-emerald-400 hover:translate-x-0.5 inline-block transition-all duration-150 ease-out">Handmade Baskets & Crafts</Link></li>
+              <li><Link href="/products?category=spices" className="hover:text-emerald-400 hover:translate-x-0.5 inline-block transition-all duration-150 ease-out">Local Spices</Link></li>
             </ul>
           </div>
 
@@ -100,11 +100,11 @@ export function Footer() {
           <div>
             <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-3">Shop by Region</h3>
             <ul className="space-y-2 text-xs">
-              <li><Link href="/products?district=jaffna" className="hover:text-white transition">Jaffna & Valvettithurai</Link></li>
-              <li><Link href="/products?district=kilinochchi" className="hover:text-white transition">Kilinochchi & Vanni</Link></li>
-              <li><Link href="/products?district=batticaloa" className="hover:text-white transition">Batticaloa & Eravur</Link></li>
-              <li><Link href="/products?district=kandy" className="hover:text-white transition">Kandy & Peradeniya</Link></li>
-              <li><Link href="/products?district=galle" className="hover:text-white transition">Galle Fort</Link></li>
+              <li><Link href="/products?district=jaffna" className="hover:text-emerald-400 hover:translate-x-0.5 inline-block transition-all duration-150 ease-out">Jaffna & Valvettithurai</Link></li>
+              <li><Link href="/products?district=kilinochchi" className="hover:text-emerald-400 hover:translate-x-0.5 inline-block transition-all duration-150 ease-out">Kilinochchi & Vanni</Link></li>
+              <li><Link href="/products?district=batticaloa" className="hover:text-emerald-400 hover:translate-x-0.5 inline-block transition-all duration-150 ease-out">Batticaloa & Eravur</Link></li>
+              <li><Link href="/products?district=kandy" className="hover:text-emerald-400 hover:translate-x-0.5 inline-block transition-all duration-150 ease-out">Kandy & Peradeniya</Link></li>
+              <li><Link href="/products?district=galle" className="hover:text-emerald-400 hover:translate-x-0.5 inline-block transition-all duration-150 ease-out">Galle Fort</Link></li>
             </ul>
           </div>
 
@@ -112,11 +112,11 @@ export function Footer() {
           <div>
             <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-3">Quick Links</h3>
             <ul className="space-y-2 text-xs">
-              <li><Link href="/register?role=seller" className="text-brand-400 font-medium hover:underline">🏪 Sell on Village Mart</Link></li>
-              <li><Link href="/sellers" className="hover:text-white transition">All Sellers</Link></li>
-              <li><Link href="/dashboard/seller" className="hover:text-white transition">Seller Portal</Link></li>
-              <li><Link href="/dashboard/admin" className="hover:text-white transition">Admin Portal</Link></li>
-              <li><Link href="/orders" className="hover:text-white transition">Track Orders</Link></li>
+              <li><Link href="/register?role=seller" className="text-emerald-400 font-medium hover:underline inline-block transition-colors duration-150">🏪 Sell on Village Mart</Link></li>
+              <li><Link href="/sellers" className="hover:text-emerald-400 hover:translate-x-0.5 inline-block transition-all duration-150 ease-out">All Sellers</Link></li>
+              <li><Link href="/dashboard/seller" className="hover:text-emerald-400 hover:translate-x-0.5 inline-block transition-all duration-150 ease-out">Seller Portal</Link></li>
+              <li><Link href="/dashboard/admin" className="hover:text-emerald-400 hover:translate-x-0.5 inline-block transition-all duration-150 ease-out">Admin Portal</Link></li>
+              <li><Link href="/orders" className="hover:text-emerald-400 hover:translate-x-0.5 inline-block transition-all duration-150 ease-out">Track Orders</Link></li>
             </ul>
           </div>
         </div>

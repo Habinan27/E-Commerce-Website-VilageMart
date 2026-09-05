@@ -315,4 +315,255 @@ export class AnalyticsService {
       byDistrict: Array.from(districtMap.values()).sort((a, b) => b.totalRevenue - a.totalRevenue),
     });
   }
+
+  static async getSellerIncomeReport(startDate?: Date, endDate?: Date) {
+    const dateFilter: any = {
+      orderStatus: { not: 'CANCELLED' },
+    };
+
+    if (startDate || endDate) {
+      dateFilter.createdAt = {};
+      if (startDate) dateFilter.createdAt.gte = startDate;
+      if (endDate) dateFilter.createdAt.lte = endDate;
+    }
+
+    const [sellers, items] = await Promise.all([
+      prisma.sellerProfile.findMany({
+        include: {
+          user: { select: { id: true, name: true, email: true, phone: true } },
+          location: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.orderItem.findMany({
+        where: {
+          order: dateFilter,
+        },
+        include: {
+          order: {
+            select: {
+              id: true,
+              orderNumber: true,
+              createdAt: true,
+              orderStatus: true,
+              paymentStatus: true,
+              user: { select: { name: true, email: true } },
+            },
+          },
+          product: { select: { id: true, name: true, price: true, slug: true } },
+          sellerEarnings: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
+
+    const sellerMap = new Map<
+      string,
+      {
+        sellerId: string;
+        shopName: string;
+        ownerName: string;
+        email: string;
+        phone: string;
+        location: string;
+        approvalStatus: string;
+        productsSold: number;
+        ordersCount: Set<string>;
+        totalSales: number;
+        sellerEarnings: number;
+        platformIncome: number;
+        productSalesMap: Map<
+          string,
+          {
+            productId: string;
+            name: string;
+            unitPrice: number;
+            quantitySold: number;
+            totalSales: number;
+            sellerEarnings: number;
+            platformIncome: number;
+          }
+        >;
+        orderSalesMap: Map<
+          string,
+          {
+            orderId: string;
+            orderNumber: string;
+            date: string;
+            customerName: string;
+            orderStatus: string;
+            itemsCount: number;
+            totalSales: number;
+            sellerEarnings: number;
+            platformIncome: number;
+          }
+        >;
+        transactions: Array<{
+          id: string;
+          orderNumber: string;
+          productName: string;
+          quantity: number;
+          unitPrice: number;
+          subtotal: number;
+          sellerNet: number;
+          platformFee: number;
+          date: string;
+          status: string;
+        }>;
+      }
+    >();
+
+    sellers.forEach((s) => {
+      const sId = s.id.toString();
+      sellerMap.set(sId, {
+        sellerId: sId,
+        shopName: s.shopName,
+        ownerName: s.user?.name || 'Unknown',
+        email: s.user?.email || '',
+        phone: s.user?.phone || '',
+        location: s.location?.name || 'Sri Lanka',
+        approvalStatus: s.approvalStatus,
+        productsSold: 0,
+        ordersCount: new Set(),
+        totalSales: 0,
+        sellerEarnings: 0,
+        platformIncome: 0,
+        productSalesMap: new Map(),
+        orderSalesMap: new Map(),
+        transactions: [],
+      });
+    });
+
+    items.forEach((item) => {
+      const sId = item.sellerId.toString();
+      let record = sellerMap.get(sId);
+      if (!record) {
+        record = {
+          sellerId: sId,
+          shopName: 'Unknown Shop',
+          ownerName: 'Unknown',
+          email: '',
+          phone: '',
+          location: 'Sri Lanka',
+          approvalStatus: 'APPROVED',
+          productsSold: 0,
+          ordersCount: new Set(),
+          totalSales: 0,
+          sellerEarnings: 0,
+          platformIncome: 0,
+          productSalesMap: new Map(),
+          orderSalesMap: new Map(),
+          transactions: [],
+        };
+        sellerMap.set(sId, record);
+      }
+
+      const gross = Number(item.subtotal);
+      const commission = item.sellerEarnings
+        ? Number(item.sellerEarnings.commissionAmount)
+        : Number((gross * 0.1).toFixed(2));
+      const net = item.sellerEarnings
+        ? Number(item.sellerEarnings.netAmount)
+        : Number((gross - commission).toFixed(2));
+
+      record.productsSold += item.quantity;
+      record.totalSales += gross;
+      record.ordersCount.add(item.orderId.toString());
+      record.platformIncome += commission;
+      record.sellerEarnings += net;
+
+      // Product-wise breakdown
+      const pId = item.productId.toString();
+      if (!record.productSalesMap.has(pId)) {
+        record.productSalesMap.set(pId, {
+          productId: pId,
+          name: item.productName || item.product?.name || 'Product',
+          unitPrice: Number(item.unitPrice),
+          quantitySold: 0,
+          totalSales: 0,
+          sellerEarnings: 0,
+          platformIncome: 0,
+        });
+      }
+      const pRecord = record.productSalesMap.get(pId)!;
+      pRecord.quantitySold += item.quantity;
+      pRecord.totalSales += gross;
+      pRecord.sellerEarnings += net;
+      pRecord.platformIncome += commission;
+
+      // Order-wise breakdown
+      const oId = item.orderId.toString();
+      if (!record.orderSalesMap.has(oId)) {
+        record.orderSalesMap.set(oId, {
+          orderId: oId,
+          orderNumber: item.order.orderNumber,
+          date: item.order.createdAt.toISOString(),
+          customerName: item.order.user?.name || 'Customer',
+          orderStatus: item.order.orderStatus,
+          itemsCount: 0,
+          totalSales: 0,
+          sellerEarnings: 0,
+          platformIncome: 0,
+        });
+      }
+      const oRecord = record.orderSalesMap.get(oId)!;
+      oRecord.itemsCount += item.quantity;
+      oRecord.totalSales += gross;
+      oRecord.sellerEarnings += net;
+      oRecord.platformIncome += commission;
+
+      // Recent transaction item
+      record.transactions.push({
+        id: item.id.toString(),
+        orderNumber: item.order.orderNumber,
+        productName: item.productName || item.product?.name || 'Product',
+        quantity: item.quantity,
+        unitPrice: Number(item.unitPrice),
+        subtotal: gross,
+        sellerNet: net,
+        platformFee: commission,
+        date: item.order.createdAt.toISOString(),
+        status: item.order.orderStatus,
+      });
+    });
+
+    const sellerList = Array.from(sellerMap.values())
+      .map((r) => ({
+        sellerId: r.sellerId,
+        shopName: r.shopName,
+        ownerName: r.ownerName,
+        email: r.email,
+        phone: r.phone,
+        location: r.location,
+        approvalStatus: r.approvalStatus,
+        productsSold: r.productsSold,
+        totalOrders: r.ordersCount.size,
+        totalSales: r.totalSales,
+        sellerEarnings: r.sellerEarnings,
+        platformIncome: r.platformIncome,
+        productSales: Array.from(r.productSalesMap.values()).sort((a, b) => b.totalSales - a.totalSales),
+        orderSales: Array.from(r.orderSalesMap.values()).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+        recentTransactions: r.transactions.slice(0, 20),
+      }))
+      .sort((a, b) => b.totalSales - a.totalSales);
+
+    const totalSellers = sellers.length;
+    const totalProductsSold = sellerList.reduce((acc, s) => acc + s.productsSold, 0);
+    const totalSales = sellerList.reduce((acc, s) => acc + s.totalSales, 0);
+    const totalSellerEarnings = sellerList.reduce((acc, s) => acc + s.sellerEarnings, 0);
+    const totalPlatformIncome = sellerList.reduce((acc, s) => acc + s.platformIncome, 0);
+    const totalOrders = new Set(items.map((i) => i.orderId.toString())).size;
+
+    return serializeBigInt({
+      summary: {
+        totalSellers,
+        totalProductsSold,
+        totalSales,
+        totalSellerEarnings,
+        totalPlatformIncome,
+        totalOrders,
+      },
+      sellers: sellerList,
+    });
+  }
 }

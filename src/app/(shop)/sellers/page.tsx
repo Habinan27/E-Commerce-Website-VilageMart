@@ -2,7 +2,7 @@ import React from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Store, MapPin, Star, ShieldCheck } from 'lucide-react';
+import { Store, MapPin, Star, ShieldCheck, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SellerService } from '@/lib/services/seller-service';
 import { generateSeoMetadata } from '@/lib/seo';
@@ -69,12 +69,17 @@ export default async function SellersPage() {
               </p>
             </div>
 
-            <div className="mt-6 pt-4 border-t border-gray-100 dark:border-slate-700 flex items-center justify-between">
-              <span className="text-xs font-medium text-gray-500 dark:text-slate-400">{seller.productCount} Listed Products</span>
-              <Link href={`/sellers/${seller.slug}`}>
-                <Button size="sm" variant="outline" className="text-xs">
-                  Visit Storefront
-                </Button>
+            <div className="mt-6 pt-4 border-t border-gray-100 dark:border-slate-700 flex items-center justify-between gap-2">
+              <span className="text-xs font-semibold text-gray-500 dark:text-slate-400">
+                {seller.productCount} Products
+              </span>
+              <Link
+                href={`/sellers/${seller.slug}`}
+                className="group/badge inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold border border-brand-600/70 dark:border-emerald-500/60 bg-brand-50/50 dark:bg-emerald-950/40 text-brand-800 dark:text-emerald-300 hover:bg-brand-700 dark:hover:bg-emerald-600 hover:text-white dark:hover:text-white hover:border-brand-700 dark:hover:border-emerald-600 shadow-sm hover:shadow-md active:scale-95 transition-all duration-150 shrink-0"
+              >
+                <Store className="w-3.5 h-3.5 text-brand-600 dark:text-emerald-400 group-hover/badge:text-white transition-colors shrink-0" />
+                <span>View Shop</span>
+                <ChevronRight className="w-3 h-3 text-brand-600/70 dark:text-emerald-400/70 group-hover/badge:text-white group-hover/badge:translate-x-0.5 transition-all shrink-0" />
               </Link>
             </div>
           </div>

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -15,6 +15,8 @@ import {
   Loader2,
   AlertCircle,
   Store,
+  Play,
+  Pause,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -70,6 +72,7 @@ export default function SellerAnnouncementsPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [deleteModalId, setDeleteModalId] = useState<string | null>(null);
+  const [deletingIds, setDeletingIds] = useState<string[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
@@ -175,9 +178,9 @@ export default function SellerAnnouncementsPage() {
     }
   };
 
-  const handleToggleStatus = async (item: Announcement) => {
+  const handleToggleStatus = async (item: Announcement, specificStatus?: boolean) => {
     try {
-      const nextStatus = !item.isActive;
+      const nextStatus = specificStatus !== undefined ? specificStatus : !item.isActive;
       setAnnouncements((prev) =>
         prev.map((a) => (a.id === item.id ? { ...a, isActive: nextStatus } : a))
       );
@@ -192,31 +195,50 @@ export default function SellerAnnouncementsPage() {
         setAnnouncements((prev) =>
           prev.map((a) => (a.id === item.id ? { ...a, isActive: item.isActive } : a))
         );
+        setErrorMessage('Failed to update shop announcement status');
       } else {
+        setSuccessMessage(
+          nextStatus
+            ? 'Shop announcement started and is now LIVE on top bar!'
+            : 'Shop announcement stopped and temporarily hidden from top bar.'
+        );
+        setTimeout(() => setSuccessMessage(null), 3500);
+
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('announcements-updated'));
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setErrorMessage(err.message || 'Error changing announcement status');
     }
   };
 
   const handleDelete = async () => {
     if (!deleteModalId) return;
+    const targetId = deleteModalId;
     try {
       setIsDeleting(true);
-      const res = await fetch(`/api/seller/announcements/${deleteModalId}`, {
+      // Smooth slide and fade out transition
+      setDeletingIds((prev) => [...prev, targetId]);
+      setDeleteModalId(null);
+
+      const res = await fetch(`/api/seller/announcements/${targetId}`, {
         method: 'DELETE',
       });
 
       if (!res.ok) {
         const data = await res.json();
+        setDeletingIds((prev) => prev.filter((id) => id !== targetId));
         throw new Error(data.error || 'Failed to delete announcement');
       }
 
-      setAnnouncements((prev) => prev.filter((a) => a.id !== deleteModalId));
-      setDeleteModalId(null);
+      // Allow 300ms for smooth CSS collapse animation before removing from state
+      setTimeout(() => {
+        setAnnouncements((prev) => prev.filter((a) => a.id !== targetId));
+        setDeletingIds((prev) => prev.filter((id) => id !== targetId));
+      }, 300);
+
       setSuccessMessage('Shop announcement deleted.');
       setTimeout(() => setSuccessMessage(null), 3000);
 
@@ -461,14 +483,17 @@ export default function SellerAnnouncementsPage() {
       )}
 
       {/* Announcements List */}
+      {/* Announcements List */}
       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-gray-200 dark:border-slate-800 overflow-hidden shadow-sm transition-colors duration-150">
-        <div className="p-6 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
-          <h2 className="text-base font-bold text-gray-900 dark:text-slate-100">
-            Your Shop Announcements ({announcements.length})
-          </h2>
-          <span className="text-xs text-gray-400 dark:text-slate-500">
-            Active announcement will appear on your public store page
-          </span>
+        <div className="p-6 border-b border-gray-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h2 className="text-base font-bold text-gray-900 dark:text-slate-100">
+              Your Shop Announcements ({announcements.length})
+            </h2>
+            <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">
+              Active shop announcements appear in real-time across the top announcement bar of the storefront.
+            </p>
+          </div>
         </div>
 
         {loading ? (
@@ -477,42 +502,48 @@ export default function SellerAnnouncementsPage() {
             <span>Loading shop announcements...</span>
           </div>
         ) : announcements.length === 0 ? (
-          <div className="py-16 text-center text-gray-400 dark:text-slate-500 text-xs">
+            <div className="py-16 text-center text-gray-400 dark:text-slate-500 text-xs">
             No shop announcements created yet. Click "Create Announcement" to add a marquee or offer ticker for your storefront.
           </div>
         ) : (
           <div className="divide-y divide-gray-100 dark:divide-slate-800">
-            {announcements.map((item) => (
-              <div key={item.id} className="p-6 hover:bg-gray-50/80 dark:hover:bg-slate-800/60 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="space-y-2 flex-1 min-w-0 pr-4">
-                  <div className="flex items-center gap-2.5 flex-wrap">
-                    {/* Active Status Badge */}
-                    <button
-                      type="button"
-                      onClick={() => handleToggleStatus(item)}
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all shadow-sm ${
-                        item.isActive
-                          ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 hover:bg-emerald-200 dark:hover:bg-emerald-900/60'
-                          : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 border border-gray-200 dark:border-slate-700 hover:bg-gray-200 dark:hover:bg-slate-700'
-                      }`}
-                      title="Click to toggle status"
-                    >
+            {announcements.map((item) => {
+              const isDeletingThis = deletingIds.includes(item.id);
+              return (
+                <div
+                  key={item.id}
+                  className={`p-6 transition-all duration-300 ease-in-out flex flex-col lg:flex-row lg:items-center justify-between gap-5 ${
+                    isDeletingThis
+                      ? 'opacity-0 -translate-x-8 max-h-0 py-0 my-0 overflow-hidden pointer-events-none'
+                      : 'opacity-100 translate-x-0 hover:bg-gray-50/80 dark:hover:bg-slate-800/60'
+                  }`}
+                >
+                  <div className="space-y-2.5 flex-1 min-w-0 pr-2">
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      {/* Active Status Badge */}
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-colors duration-300 shadow-xs ${
+                          item.isActive
+                            ? 'bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
+                            : 'bg-amber-100/70 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800/60'
+                        }`}
+                      >
                       {item.isActive ? (
                         <>
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400 animate-pulse" />
+                          <span className="w-2 h-2 rounded-full bg-emerald-600 dark:bg-emerald-400 animate-pulse" />
                           <span>Active on Storefront</span>
                         </>
                       ) : (
                         <>
-                          <span className="w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-slate-500" />
-                          <span>Disabled</span>
+                          <span className="w-2 h-2 rounded-full bg-amber-500 dark:bg-amber-400" />
+                          <span>Stopped / Hidden</span>
                         </>
                       )}
-                    </button>
+                    </span>
 
                     {/* Mode Badge */}
                     <span className="bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 px-2.5 py-0.5 rounded-full text-[10px] font-semibold">
-                      {item.isMarquee ? '🔄 Marquee Ticker' : '📌 Static Banner'}
+                      {item.isMarquee ? '🔄 Scrolling Marquee' : '📌 Static Banner'}
                     </span>
 
                     {/* Theme Badge */}
@@ -523,8 +554,8 @@ export default function SellerAnnouncementsPage() {
 
                   <div>
                     {item.title && (
-                      <span className="text-xs font-bold text-gray-900 dark:text-slate-100 mr-2">
-                        [{item.title}]
+                      <span className="text-xs font-bold text-gray-900 dark:text-slate-100 mr-2 bg-gray-100 dark:bg-slate-800 px-2 py-0.5 rounded-md border border-gray-200 dark:border-slate-700">
+                        {item.title}
                       </span>
                     )}
                     <span className="text-xs font-semibold text-gray-800 dark:text-slate-200 leading-relaxed">
@@ -546,29 +577,54 @@ export default function SellerAnnouncementsPage() {
                   )}
                 </div>
 
-                {/* Actions */}
-                <div className="flex items-center gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100 dark:border-slate-800">
+                {/* Explicit Action Controls: Stop / Start, Edit, Delete */}
+                <div className="flex items-center gap-2 shrink-0 pt-3 lg:pt-0 border-t lg:border-t-0 border-gray-100 dark:border-slate-800 flex-wrap">
+                  {item.isActive ? (
+                    <button
+                      type="button"
+                      onClick={() => handleToggleStatus(item, false)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/60 transition-all shadow-xs active:scale-95"
+                      title="Temporarily stop and hide announcement from storefront"
+                    >
+                      <Pause className="w-3.5 h-3.5 fill-current" />
+                      <span>Stop</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleToggleStatus(item, true)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-all shadow-xs active:scale-95"
+                      title="Start and display announcement live on storefront"
+                    >
+                      <Play className="w-3.5 h-3.5 fill-current" />
+                      <span>Start / Resume</span>
+                    </button>
+                  )}
+
                   <button
                     type="button"
                     onClick={() => handleOpenEdit(item)}
-                    className="p-2 text-gray-500 dark:text-slate-400 hover:text-brand-700 dark:hover:text-emerald-400 hover:bg-brand-50 dark:hover:bg-slate-800 rounded-xl transition-colors"
-                    title="Edit announcement"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold text-xs bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 border border-gray-200 dark:border-slate-700 hover:bg-gray-200 dark:hover:bg-slate-700 transition-all shadow-xs active:scale-95"
+                    title="Edit shop announcement details"
                   >
-                    <Edit2 className="w-4 h-4" />
+                    <Edit2 className="w-3.5 h-3.5" />
+                    <span>Edit</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setDeleteModalId(item.id)}
-                    className="p-2 text-gray-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-slate-800 rounded-xl transition-colors"
-                    title="Delete announcement"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold text-xs bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/50 hover:bg-red-100 dark:hover:bg-red-900/60 transition-all shadow-xs active:scale-95"
+                    title="Permanently delete shop announcement"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete</span>
                   </button>
                 </div>
               </div>
-            ))}
-          </div>
+            );
+          })}
+        </div>
         )}
       </div>
 

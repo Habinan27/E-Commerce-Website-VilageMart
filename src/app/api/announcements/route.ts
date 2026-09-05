@@ -1,4 +1,4 @@
-﻿import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 
 export const dynamic = 'force-dynamic';
@@ -29,17 +29,21 @@ export async function GET(request: Request) {
       whereClause.targetAudience = 'SELLERS';
       whereClause.sellerId = null;
     } else {
-      // Global customer storefront announcements
-      whereClause.sellerId = null;
+      // Global customer storefront announcements (Includes both Admin and Seller active announcements)
       whereClause.targetAudience = { in: ['CUSTOMERS', 'ALL'] };
     }
 
     let announcements = await prisma.announcement.findMany({
       where: whereClause,
+      include: {
+        seller: {
+          select: { shopName: true, slug: true },
+        },
+      },
       orderBy: [{ displayOrder: 'asc' }, { createdAt: 'desc' }],
     });
 
-    // If global store is queried and database is empty, seed initial promotion
+    // If global store is queried and database is completely empty, seed initial promotion
     if (!sellerSlug && !sellerId && audience !== 'SELLERS' && announcements.length === 0) {
       const totalCount = await prisma.announcement.count();
       if (totalCount === 0) {
@@ -57,6 +61,11 @@ export async function GET(request: Request) {
             displayOrder: 0,
             targetAudience: 'CUSTOMERS',
           },
+          include: {
+            seller: {
+              select: { shopName: true, slug: true },
+            },
+          },
         });
         announcements = [seeded];
       }
@@ -64,7 +73,9 @@ export async function GET(request: Request) {
 
     const formatted = announcements.map((a) => ({
       id: a.id.toString(),
-      sellerId: a.sellerId?.toString(),
+      sellerId: a.sellerId?.toString() || null,
+      sellerShopName: a.seller?.shopName || null,
+      sellerSlug: a.seller?.slug || null,
       title: a.title,
       content: a.content,
       contentTamil: a.contentTamil,

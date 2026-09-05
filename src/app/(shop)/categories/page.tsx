@@ -2,6 +2,7 @@ import React from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
+import { ChevronRight } from 'lucide-react';
 import { prisma } from '@/lib/db/prisma';
 import { serializeBigInt } from '@/lib/utils';
 import { generateSeoMetadata } from '@/lib/seo';
@@ -26,39 +27,52 @@ export default async function CategoriesPage() {
   const serialized = serializeBigInt(categories);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <div className="text-center max-w-2xl mx-auto mb-12">
-        <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Village Product Categories</h1>
-        <p className="text-sm text-gray-500 mt-2">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
+      <div className="text-center max-w-2xl mx-auto">
+        <h1 className="text-3xl sm:text-4xl font-black text-gray-900 dark:text-slate-100 tracking-tight">
+          Village Product Categories
+        </h1>
+        <p className="text-xs sm:text-sm text-gray-500 dark:text-slate-400 mt-2 leading-relaxed">
           Explore curated traditional categories directly from rural producers across Sri Lanka.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
         {serialized.map((cat: any) => (
           <Link
             key={cat.id}
             href={`/products?category=${cat.slug}`}
-            className="group relative bg-white rounded-2xl border border-gray-200 overflow-hidden hover:border-brand-500 hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
+            className="group bg-white dark:bg-slate-900 rounded-3xl border border-gray-200/80 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl hover:border-brand-400 dark:hover:border-emerald-600 transition-all duration-300 flex flex-col justify-between"
           >
-            <div className="relative aspect-[16/10] bg-gray-100 overflow-hidden">
+            {/* Image Container with Smooth Scale on Hover */}
+            <div className="relative aspect-[16/10] bg-gray-100 dark:bg-slate-800 overflow-hidden">
               <Image
                 src={cat.imageUrl || 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=600&auto=format&fit=crop&q=80'}
                 alt={cat.name}
                 fill
-                className="object-cover group-hover:scale-105 transition-transform duration-500"
+                className="object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
                 sizes="(max-width: 768px) 100vw, 33vw"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-gray-950/80 via-black/20 to-transparent"></div>
-              <div className="absolute bottom-4 left-4 right-4 text-white">
-                <span className="text-[11px] bg-brand-700/80 px-2.5 py-0.5 rounded-full font-medium backdrop-blur-sm">
-                  {cat._count?.products || 0} Products
-                </span>
-                <h2 className="text-lg font-bold group-hover:text-amber-300 transition mt-1">{cat.name}</h2>
+              <div className="absolute top-3.5 right-3.5 bg-black/50 backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-bold text-white border border-white/20 shadow-md">
+                {cat._count?.products || 0} Products
               </div>
             </div>
-            <div className="p-4 bg-white">
-              <p className="text-xs text-gray-500 line-clamp-2">{cat.description}</p>
+
+            {/* Dedicated Info Box Below Image */}
+            <div className="p-5 sm:p-6 flex flex-col justify-between flex-1 bg-white dark:bg-slate-900">
+              <div className="space-y-1.5">
+                <h2 className="text-lg font-bold text-gray-900 dark:text-slate-100 group-hover:text-brand-700 dark:group-hover:text-emerald-400 transition-colors duration-150 leading-snug">
+                  {cat.name}
+                </h2>
+                <p className="text-xs text-gray-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                  {cat.description || 'Authentic rural Sri Lankan village products and specialties.'}
+                </p>
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-brand-700 dark:text-emerald-400">
+                <span>View Products</span>
+                <ChevronRight className="w-4 h-4 text-gray-400 dark:text-slate-500 group-hover:text-brand-700 dark:group-hover:text-emerald-400 group-hover:translate-x-1 transition-all" />
+              </div>
             </div>
           </Link>
         ))}

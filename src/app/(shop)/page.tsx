@@ -115,29 +115,64 @@ export default async function HomePage() {
               </div>
             </div>
 
-            {/* Right Col: Showcase Card */}
-            <div className="lg:col-span-5 relative">
-              <div className="relative rounded-3xl overflow-hidden shadow-2xl border-2 border-white/15 bg-brand-900/50 backdrop-blur-md p-2.5">
-                <div className="relative aspect-[4/3] rounded-2xl overflow-hidden">
+            {/* Right Col: Showcase Card with Translucent Glass Look & Soft Green Aura */}
+            <div className="lg:col-span-5 relative mt-6 lg:mt-0">
+              {/* Soft Green Aura & Floating Atmospheric Glow Effects */}
+              <div className="absolute -inset-3 sm:-inset-5 bg-gradient-to-tr from-emerald-500/35 via-emerald-400/25 to-teal-300/30 rounded-[2.5rem] blur-2xl -z-10 opacity-85" />
+              <div className="absolute -top-12 -right-12 w-48 h-48 bg-emerald-400/30 rounded-full blur-3xl -z-10 pointer-events-none" />
+              <div className="absolute -bottom-10 -left-10 w-48 h-48 bg-teal-500/25 rounded-full blur-3xl -z-10 pointer-events-none" />
+
+              {/* Translucent Frosted Glass Card */}
+              <Link
+                href="/products"
+                className="group block relative rounded-3xl p-3 sm:p-3.5 bg-white/[0.08] dark:bg-slate-900/50 backdrop-blur-2xl backdrop-saturate-150 border border-white/25 dark:border-emerald-400/30 shadow-[0_25px_60px_rgba(0,0,0,0.55),inset_0_1px_1px_rgba(255,255,255,0.25)] hover:border-emerald-400/50 transition-all duration-300"
+              >
+                {/* Clean Image Box without Text Overlay */}
+                <div className="relative aspect-[16/10] sm:aspect-[4/3] rounded-2xl overflow-hidden border border-white/15 bg-black/40">
                   <Image
                     src="https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=800&auto=format&fit=crop&q=80"
                     alt="Authentic Sri Lankan Palm Sweets"
                     fill
                     priority
-                    className="object-cover"
-                    sizes="500px"
+                    className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                    sizes="(max-width: 768px) 100vw, 500px"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-5">
-                    <span className="text-amber-300 font-bold text-xs uppercase tracking-wider">
-                      Village Specialty
-                    </span>
-                    <h3 className="text-lg sm:text-xl font-bold text-white mt-1">
-                      யாழ்ப்பாண பனங்கற்கண்டு (Jaffna Palm Candy)
-                    </h3>
-                    <p className="text-xs text-gray-300 mt-0.5">Direct from Valvettithurai, Northern Province</p>
+
+                  {/* Top Floating Glass Badges */}
+                  <div className="absolute top-3 left-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/50 backdrop-blur-md border border-white/20 text-emerald-300 text-[11px] font-bold shadow-lg">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                    <span>Heritage Village Specialty</span>
+                  </div>
+
+                  <div className="absolute top-3 right-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-950/70 backdrop-blur-md border border-emerald-400/40 text-emerald-300 text-[11px] font-bold shadow-lg">
+                    <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                    <span>4.9 (120+ reviews)</span>
                   </div>
                 </div>
-              </div>
+
+                {/* Dedicated Content Box Outside of Image */}
+                <div className="p-4 sm:p-5 flex flex-col justify-between">
+                  <div>
+                    <span className="text-amber-300 font-bold text-xs uppercase tracking-wider block">
+                      Village Specialty • பாரம்பரிய உணவு
+                    </span>
+                    <h3 className="text-lg sm:text-xl font-bold text-white mt-1 group-hover:text-amber-300 transition-colors duration-150 leading-snug">
+                      யாழ்ப்பாண பனங்கற்கண்டு (Jaffna Palm Candy)
+                    </h3>
+                    <p className="text-xs text-emerald-200/90 mt-1.5 flex items-center gap-1.5 font-medium">
+                      <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                      <span>Direct from Valvettithurai, Northern Province</span>
+                    </p>
+                  </div>
+
+                  <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs font-semibold text-brand-200">
+                    <span className="text-emerald-300 font-bold">100% Pure & Organic</span>
+                    <span className="inline-flex items-center gap-1 text-white group-hover:text-amber-300 group-hover:translate-x-1 transition-all">
+                      Browse Specialty <ChevronRight className="w-3.5 h-3.5" />
+                    </span>
+                  </div>
+                </div>
+              </Link>
             </div>
           </div>
         </div>
@@ -194,26 +229,40 @@ export default async function HomePage() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
           {serializedCategories.map((cat: any) => (
             <Link
               key={cat.id}
               href={`/products?category=${cat.slug}`}
-              className="group relative bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 overflow-hidden hover:shadow-md hover:border-brand-400 dark:hover:border-brand-500 transition-all duration-150 flex flex-col justify-between"
+              className="group bg-white dark:bg-slate-900 rounded-2xl border border-gray-200/80 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-lg hover:border-brand-300 dark:hover:border-emerald-700/60 transition-all duration-300 flex flex-col justify-between"
             >
-              <div className="relative aspect-[4/3] bg-gray-100 dark:bg-slate-900 overflow-hidden">
+              {/* Image Container with Smooth Scale */}
+              <div className="relative aspect-[4/3] bg-gray-100 dark:bg-slate-800 overflow-hidden">
                 <Image
                   src={cat.imageUrl || 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=600&auto=format&fit=crop&q=80'}
                   alt={cat.name}
                   fill
-                  className="object-cover"
+                  className="object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
                   sizes="(max-width: 768px) 50vw, 25vw"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-gray-950/80 via-black/20 to-transparent"></div>
-                <div className="absolute bottom-3 left-3 right-3 text-white">
-                  <h3 className="font-bold text-sm sm:text-base group-hover:text-amber-300 transition leading-snug">
+              </div>
+
+              {/* Text / Info Below Image */}
+              <div className="p-4 flex flex-col justify-between flex-1 bg-white dark:bg-slate-900">
+                <div>
+                  <h3 className="font-bold text-sm sm:text-base text-gray-900 dark:text-slate-100 group-hover:text-brand-700 dark:hover:text-emerald-400 transition-colors duration-150 leading-snug line-clamp-1">
                     {cat.name}
                   </h3>
+                  {cat.description && (
+                    <p className="text-xs text-gray-500 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                      {cat.description}
+                    </p>
+                  )}
+                </div>
+
+                <div className="mt-3 pt-2.5 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-gray-500 dark:text-slate-400 font-medium">
+                  <span className="text-brand-700 dark:text-emerald-400 font-bold">Explore Category</span>
+                  <ChevronRight className="w-3.5 h-3.5 text-gray-400 dark:text-slate-500 group-hover:text-brand-700 dark:group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all" />
                 </div>
               </div>
             </Link>
@@ -299,17 +348,20 @@ export default async function HomePage() {
                   </p>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-gray-100 dark:border-slate-700 flex items-center justify-between">
-                  <div className="flex items-center gap-1 text-xs font-semibold text-gray-800 dark:text-slate-200">
+                <div className="mt-4 pt-3 border-t border-gray-100 dark:border-slate-750 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1 text-xs font-semibold text-gray-800 dark:text-slate-200 shrink-0">
                     <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                     <span>{seller.averageRating}</span>
-                    <span className="text-gray-500 dark:text-slate-400 font-normal">({seller.reviewCount} reviews)</span>
+                    <span className="text-gray-500 dark:text-slate-400 font-normal">({seller.reviewCount})</span>
                   </div>
 
-                  <Link href={`/sellers/${seller.slug}`}>
-                    <Button variant="outline" size="sm" className="text-xs py-1 px-2.5">
-                      View Shop
-                    </Button>
+                  <Link
+                    href={`/sellers/${seller.slug}`}
+                    className="group/badge inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border border-brand-600/70 dark:border-emerald-500/60 bg-brand-50/50 dark:bg-emerald-950/40 text-brand-800 dark:text-emerald-300 hover:bg-brand-700 dark:hover:bg-emerald-600 hover:text-white dark:hover:text-white hover:border-brand-700 dark:hover:border-emerald-600 shadow-sm hover:shadow-md active:scale-95 transition-all duration-150 shrink-0"
+                  >
+                    <Store className="w-3.5 h-3.5 text-brand-600 dark:text-emerald-400 group-hover/badge:text-white transition-colors shrink-0" />
+                    <span>View Shop</span>
+                    <ChevronRight className="w-3 h-3 text-brand-600/70 dark:text-emerald-400/70 group-hover/badge:text-white group-hover/badge:translate-x-0.5 transition-all shrink-0" />
                   </Link>
                 </div>
               </div>

@@ -144,15 +144,15 @@ export function ProductCard({ product }: ProductCardProps) {
   };
 
   return (
-    <div className="group relative bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 overflow-hidden hover:shadow-md hover:border-gray-300 dark:hover:border-slate-600 transition-all duration-150 flex flex-col justify-between">
+    <div className="group relative bg-white dark:bg-slate-900 rounded-2xl border border-gray-200/90 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-xl hover:border-brand-300 dark:hover:border-emerald-700/60 transition-all duration-300 ease-out flex flex-col justify-between">
       {/* Product Image Container */}
-      <div className="relative aspect-square w-full bg-gray-50 dark:bg-slate-900 overflow-hidden">
+      <div className="relative aspect-square w-full bg-gray-50 dark:bg-slate-800/80 overflow-hidden">
         <Link href={`/products/${product.slug}`} className="block w-full h-full">
           <Image
             src={primaryImage}
             alt={product.name}
             fill
-            className="object-cover"
+            className="object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
           />
         </Link>
@@ -160,7 +160,7 @@ export function ProductCard({ product }: ProductCardProps) {
         {/* Wishlist Button */}
         <button
           onClick={handleToggleWishlist}
-          className={`absolute top-3 right-3 p-2 rounded-full backdrop-blur-md transition-colors duration-150 shadow-sm ${
+          className={`absolute top-3 right-3 p-2 rounded-full backdrop-blur-md hover:scale-110 active:scale-90 transition-all duration-200 ease-out shadow-sm ${
             isWishlisted
               ? 'bg-red-50 dark:bg-red-950/80 text-red-600 dark:text-red-400'
               : 'bg-white/80 dark:bg-slate-900/80 text-gray-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 hover:text-red-500'
@@ -173,7 +173,7 @@ export function ProductCard({ product }: ProductCardProps) {
         {/* Stock / Category Badge */}
         <div className="absolute top-3 left-3 flex flex-col gap-1">
           {product.category && (
-            <span className="bg-brand-900/80 backdrop-blur-sm text-brand-100 text-[10px] font-semibold px-2 py-0.5 rounded-md shadow-sm">
+            <span className="bg-brand-900/85 backdrop-blur-sm text-brand-100 text-[10px] font-semibold px-2 py-0.5 rounded-md shadow-sm">
               {product.category.name}
             </span>
           )}
@@ -197,7 +197,7 @@ export function ProductCard({ product }: ProductCardProps) {
             <div className="flex items-center gap-1 text-[11px] text-gray-500 dark:text-slate-400 mb-1.5 truncate">
               <Link
                 href={`/sellers/${product.seller.slug}`}
-                className="font-medium text-brand-800 dark:text-brand-400 hover:underline truncate"
+                className="font-semibold text-brand-800 dark:text-emerald-400 hover:underline truncate transition-colors duration-150"
               >
                 {product.seller.shopName}
               </Link>
@@ -214,7 +214,7 @@ export function ProductCard({ product }: ProductCardProps) {
           )}
 
           {/* Product Title */}
-          <Link href={`/products/${product.slug}`} className="block hover:text-brand-700 dark:hover:text-brand-400 transition-colors duration-150">
+          <Link href={`/products/${product.slug}`} className="block hover:text-brand-700 dark:hover:text-emerald-400 transition-colors duration-150">
             <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 line-clamp-2 leading-snug tracking-tight">
               {product.name}
             </h3>
@@ -222,7 +222,7 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
 
         {/* Price & Rating & Action */}
-        <div className="mt-4 pt-3 border-t border-gray-100 dark:border-slate-700/80 flex items-end justify-between gap-2">
+        <div className="mt-4 pt-3 border-t border-gray-100 dark:border-slate-800 flex items-end justify-between gap-2">
           <div>
             <div className="text-xs text-gray-400 font-medium">Price</div>
             <div className="text-base font-bold text-gray-900 dark:text-slate-100 tracking-tight">
@@ -241,12 +241,12 @@ export function ProductCard({ product }: ProductCardProps) {
           <button
             onClick={handleAddToCart}
             disabled={product.stock <= 0 || isAdding}
-            className={`p-2.5 rounded-xl transition-colors duration-150 flex items-center justify-center shrink-0 shadow-sm ${
+            className={`p-2.5 rounded-xl transition-all duration-200 ease-out active:scale-90 flex items-center justify-center shrink-0 shadow-sm ${
               isAdded
-                ? 'bg-emerald-600 text-white'
+                ? 'bg-emerald-600 text-white shadow-emerald-600/30'
                 : product.stock <= 0
                 ? 'bg-gray-100 dark:bg-slate-800 text-gray-400 cursor-not-allowed'
-                : 'bg-brand-700 hover:bg-brand-800 text-white'
+                : 'bg-brand-700 hover:bg-brand-800 active:bg-brand-900 text-white shadow-brand-900/20'
             }`}
             title="Add to cart"
           >

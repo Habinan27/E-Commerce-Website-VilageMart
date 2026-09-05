@@ -28,9 +28,15 @@ interface HeaderProps {
   user?: UserSession | null;
   cartCount?: number;
   initialAnnouncement?: any;
+  initialAnnouncements?: any[];
 }
 
-export function Header({ user: initialUser, cartCount = 0, initialAnnouncement }: HeaderProps) {
+export function Header({
+  user: initialUser,
+  cartCount = 0,
+  initialAnnouncement,
+  initialAnnouncements,
+}: HeaderProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [query, setQuery] = useState(searchParams?.get('query') || '');
@@ -131,7 +137,10 @@ export function Header({ user: initialUser, cartCount = 0, initialAnnouncement }
   return (
     <header className="sticky top-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-gray-100 dark:border-slate-800 shadow-sm transition-colors">
       {/* Dynamic Announcement Bar & Promotional Marquee */}
-      <AnnouncementBar initialAnnouncement={initialAnnouncement} />
+      <AnnouncementBar
+        initialAnnouncements={initialAnnouncements}
+        initialAnnouncement={initialAnnouncement}
+      />
 
       {/* Main Navigation Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -168,12 +177,12 @@ export function Header({ user: initialUser, cartCount = 0, initialAnnouncement }
                 placeholder='Search products...'
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                className="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-full pl-11 pr-24 py-2 text-sm text-gray-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-900 focus:border-brand-600 focus:ring-2 focus:ring-brand-100 dark:focus:ring-brand-900 transition-colors outline-none"
+                className="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-full pl-11 pr-24 py-2 text-sm text-gray-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-900 focus:border-brand-600 focus:ring-2 focus:ring-brand-100 dark:focus:ring-brand-900 transition-all duration-200 outline-none"
               />
               <Search className="w-4 h-4 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" />
               <button
                 type="submit"
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-brand-700 hover:bg-brand-800 text-white text-xs font-semibold px-4 py-1.5 rounded-full transition-colors duration-150"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-brand-700 hover:bg-brand-800 active:scale-95 text-white text-xs font-semibold px-4 py-1.5 rounded-full shadow-sm hover:shadow transition-all duration-200 ease-out"
               >
                 Search
               </button>
@@ -181,22 +190,22 @@ export function Header({ user: initialUser, cartCount = 0, initialAnnouncement }
           </form>
 
           {/* Navigation Actions */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1 sm:gap-2">
             <Link
               href="/products"
-              className="hidden lg:inline-flex text-sm font-medium text-gray-700 dark:text-slate-200 hover:text-brand-700 dark:hover:text-brand-400 transition-colors duration-150"
+              className="hidden lg:inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium text-gray-700 dark:text-slate-200 hover:text-brand-800 dark:hover:text-emerald-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors duration-200 ease-out select-none border border-transparent"
             >
               All Products
             </Link>
             <Link
               href="/categories"
-              className="hidden lg:inline-flex text-sm font-medium text-gray-700 dark:text-slate-200 hover:text-brand-700 dark:hover:text-brand-400 transition-colors duration-150"
+              className="hidden lg:inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium text-gray-700 dark:text-slate-200 hover:text-brand-800 dark:hover:text-emerald-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors duration-200 ease-out select-none border border-transparent"
             >
               Categories
             </Link>
             <Link
               href="/sellers"
-              className="hidden lg:inline-flex text-sm font-medium text-gray-700 dark:text-slate-200 hover:text-brand-700 dark:hover:text-brand-400 transition-colors duration-150"
+              className="hidden lg:inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium text-gray-700 dark:text-slate-200 hover:text-brand-800 dark:hover:text-emerald-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors duration-200 ease-out select-none border border-transparent"
             >
               Sellers
             </Link>
@@ -207,7 +216,7 @@ export function Header({ user: initialUser, cartCount = 0, initialAnnouncement }
             {/* Wishlist */}
             <Link
               href="/wishlist"
-              className="p-2 text-gray-600 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full transition-colors duration-150 relative"
+              className="p-2 text-gray-600 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:scale-105 active:scale-95 rounded-full transition-all duration-200 ease-out relative"
               title="Saved Products"
             >
               <Heart className={`w-5 h-5 ${wishlistBadge > 0 ? 'fill-red-500 text-red-500' : ''}`} />
@@ -222,7 +231,7 @@ export function Header({ user: initialUser, cartCount = 0, initialAnnouncement }
             <Link
               href="/cart"
               prefetch={false}
-              className="p-2 text-gray-600 dark:text-slate-300 hover:text-brand-700 dark:hover:text-brand-400 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full transition-colors duration-150 relative"
+              className="p-2 text-gray-600 dark:text-slate-300 hover:text-brand-700 dark:hover:text-emerald-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:scale-105 active:scale-95 rounded-full transition-all duration-200 ease-out relative"
               title="Shopping Cart"
             >
               <ShoppingBag className="w-5 h-5" />
@@ -238,7 +247,7 @@ export function Header({ user: initialUser, cartCount = 0, initialAnnouncement }
               <div className="relative">
                 <button
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  className="flex items-center gap-2 p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors duration-150 border border-gray-200 dark:border-slate-700"
+                  className="flex items-center gap-2 p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 active:scale-95 transition-all duration-200 ease-out border border-gray-200 dark:border-slate-700"
                 >
                   <div className="w-7 h-7 rounded-full bg-brand-100 text-brand-800 font-bold flex items-center justify-center text-xs">
                     {user.name.charAt(0).toUpperCase()}

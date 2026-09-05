@@ -1,4 +1,4 @@
-﻿import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { requireRole } from '@/lib/auth';
 
@@ -10,12 +10,19 @@ export async function GET() {
     await requireRole(['ADMIN', 'SELLER']);
 
     const announcements = await prisma.announcement.findMany({
+      include: {
+        seller: {
+          select: { shopName: true, slug: true },
+        },
+      },
       orderBy: [{ displayOrder: 'asc' }, { createdAt: 'desc' }],
     });
 
     const formatted = announcements.map((a) => ({
       id: a.id.toString(),
       sellerId: a.sellerId?.toString() || null,
+      sellerShopName: a.seller?.shopName || null,
+      sellerSlug: a.seller?.slug || null,
       title: a.title,
       content: a.content,
       contentTamil: a.contentTamil,

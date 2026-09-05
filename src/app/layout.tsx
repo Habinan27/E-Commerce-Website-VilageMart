@@ -49,7 +49,7 @@ export default async function RootLayout({
 }) {
   const user = await getSessionUser();
   let cartCount = 0;
-  let initialAnnouncement = null;
+  let initialAnnouncements: any[] = [];
 
   if (user) {
     try {
@@ -65,18 +65,24 @@ export default async function RootLayout({
 
   try {
     if (prisma?.announcement) {
-      const a = await prisma.announcement.findFirst({
+      const activeAnnouncements = await prisma.announcement.findMany({
         where: {
-          sellerId: null,
           targetAudience: { in: ['CUSTOMERS', 'ALL'] },
           isActive: true,
         },
+        include: {
+          seller: {
+            select: { shopName: true, slug: true },
+          },
+        },
         orderBy: [{ displayOrder: 'asc' }, { createdAt: 'desc' }],
       });
-      if (a) {
-        initialAnnouncement = {
+      if (activeAnnouncements && activeAnnouncements.length > 0) {
+        initialAnnouncements = activeAnnouncements.map((a) => ({
           id: a.id.toString(),
           sellerId: a.sellerId?.toString() || null,
+          sellerShopName: a.seller?.shopName || null,
+          sellerSlug: a.seller?.slug || null,
           title: a.title,
           content: a.content,
           contentTamil: a.contentTamil,
@@ -87,7 +93,7 @@ export default async function RootLayout({
           speed: a.speed,
           isActive: a.isActive,
           displayOrder: a.displayOrder,
-        };
+        }));
       }
     }
   } catch (e) {
@@ -118,7 +124,7 @@ export default async function RootLayout({
       </head>
       <body className="min-h-screen flex flex-col justify-between bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-slate-100 font-sans antialiased transition-colors duration-150">
         <div>
-          <Header user={user} cartCount={cartCount} initialAnnouncement={initialAnnouncement} />
+          <Header user={user} cartCount={cartCount} initialAnnouncements={initialAnnouncements} />
           <main>{children}</main>
         </div>
         <Footer />
