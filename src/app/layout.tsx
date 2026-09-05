@@ -74,34 +74,46 @@ export default async function RootLayout({
           seller: {
             select: { shopName: true, slug: true },
           },
+          product: {
+            select: { id: true, name: true, slug: true, price: true, status: true },
+          },
         },
         orderBy: [{ displayOrder: 'asc' }, { createdAt: 'desc' }],
       });
       if (activeAnnouncements && activeAnnouncements.length > 0) {
-        initialAnnouncements = activeAnnouncements.map((a) => ({
-          id: a.id.toString(),
-          sellerId: a.sellerId?.toString() || null,
-          sellerShopName: a.seller?.shopName || null,
-          sellerSlug: a.seller?.slug || null,
-          title: a.title,
-          content: a.content,
-          contentTamil: a.contentTamil,
-          linkUrl: a.linkUrl,
-          linkLabel: a.linkLabel,
-          theme: a.theme,
-          bgType: a.bgType || 'COLOR',
-          bgColor: a.bgColor || null,
-          textColor: a.textColor || null,
-          accentColor: a.accentColor || null,
-          borderColor: a.borderColor || null,
-          buttonColor: a.buttonColor || null,
-          bgImage: a.bgImage || null,
-          overlayOpacity: a.overlayOpacity !== undefined ? a.overlayOpacity : 60,
-          isMarquee: a.isMarquee,
-          speed: a.speed,
-          isActive: a.isActive,
-          displayOrder: a.displayOrder,
-        }));
+        initialAnnouncements = activeAnnouncements.map((a) => {
+          const finalLinkUrl = a.product?.slug ? `/products/${a.product.slug}` : (a.linkUrl || null);
+
+          return {
+            id: a.id.toString(),
+            sellerId: a.sellerId?.toString() || null,
+            sellerShopName: a.seller?.shopName || null,
+            sellerSlug: a.seller?.slug || null,
+            productId: a.productId?.toString() || null,
+            productName: a.product?.name || null,
+            productSlug: a.product?.slug || null,
+            productPrice: a.product?.price ? Number(a.product.price) : null,
+            title: a.title,
+            content: a.content,
+            contentTamil: a.contentTamil,
+            linkUrl: finalLinkUrl,
+            linkLabel: a.linkLabel,
+            theme: a.theme,
+            bgType: a.bgType || 'COLOR',
+            bgColor: a.bgColor || null,
+            textColor: a.textColor || null,
+            accentColor: a.accentColor || null,
+            borderColor: a.borderColor || null,
+            buttonColor: a.buttonColor || null,
+            buttonTextColor: a.buttonTextColor || null,
+            bgImage: a.bgImage || null,
+            overlayOpacity: a.overlayOpacity !== undefined ? a.overlayOpacity : 60,
+            isMarquee: a.isMarquee,
+            speed: a.speed,
+            isActive: a.isActive,
+            displayOrder: a.displayOrder,
+          };
+        });
       }
     }
   } catch (e) {

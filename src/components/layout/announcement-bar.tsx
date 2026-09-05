@@ -154,10 +154,16 @@ export function AnnouncementBar({ initialAnnouncements, initialAnnouncement }: A
 
     const textStyle: React.CSSProperties = item.textColor ? { color: item.textColor } : { color: '#ffffff' };
 
+    const rawLabel = item.linkLabel || 'Explore';
+    const cleanLabel = rawLabel.replace(/\s*(?:→|->|›|>|—)\s*$/, '').trim();
+
+    const buttonBg = item.buttonColor || '#ffffff';
+    const buttonText = item.buttonTextColor || (buttonBg.toLowerCase() === '#ffffff' || buttonBg.toLowerCase() === '#fff' ? '#022c22' : '#ffffff');
+
     const buttonStyle: React.CSSProperties = {
-      backgroundColor: item.buttonColor || 'rgba(255, 255, 255, 0.22)',
-      borderColor: item.borderColor || item.buttonColor || 'rgba(255, 255, 255, 0.3)',
-      color: item.buttonTextColor || '#ffffff',
+      backgroundColor: buttonBg,
+      borderColor: item.borderColor || 'rgba(255, 255, 255, 0.3)',
+      color: buttonText,
     };
 
     return (
@@ -193,12 +199,12 @@ export function AnnouncementBar({ initialAnnouncements, initialAnnouncement }: A
         {item.linkUrl && (
           <Link
             href={item.linkUrl}
-            className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full font-bold text-[11px] transition-all duration-150 ml-1.5 hover:brightness-110 hover:shadow-md border shadow-xs backdrop-blur-xs select-none shrink-0"
+            className="group/btn inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full font-bold text-[11px] tracking-tight transition-all duration-200 ml-1.5 hover:brightness-110 hover:shadow-md hover:scale-[1.03] active:scale-95 border border-white/25 shadow-xs backdrop-blur-xs select-none shrink-0 cursor-pointer"
             style={buttonStyle}
             onClick={(e) => e.stopPropagation()}
           >
-            <span>{item.linkLabel || 'Explore →'}</span>
-            <ArrowRight className="w-3 h-3 shrink-0" />
+            <span className="leading-none">{cleanLabel}</span>
+            <ArrowRight className="w-3 h-3 shrink-0 transition-transform duration-200 group-hover/btn:translate-x-0.5" />
           </Link>
         )}
 
@@ -291,20 +297,27 @@ export function AnnouncementBar({ initialAnnouncements, initialAnnouncement }: A
                 {primaryItem.contentTamil}
               </span>
             )}
-            {primaryItem?.linkUrl && (
-              <Link
-                href={primaryItem.linkUrl}
-                className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full font-bold text-[11px] transition-all duration-150 ml-1 hover:brightness-110 hover:shadow-md border shadow-xs"
-                style={{
-                  backgroundColor: primaryItem.buttonColor || 'rgba(255, 255, 255, 0.22)',
-                  borderColor: primaryItem.borderColor || primaryItem.buttonColor || 'rgba(255, 255, 255, 0.3)',
-                  color: primaryItem.buttonTextColor || '#ffffff',
-                }}
-              >
-                <span>{primaryItem.linkLabel || 'Explore Now →'}</span>
-                <ArrowRight className="w-3 h-3 shrink-0" />
-              </Link>
-            )}
+            {primaryItem?.linkUrl && (() => {
+              const rawStaticLabel = primaryItem.linkLabel || 'Explore';
+              const cleanStaticLabel = rawStaticLabel.replace(/\s*(?:→|->|›|>|—)\s*$/, '').trim();
+              const staticButtonBg = primaryItem.buttonColor || '#ffffff';
+              const staticButtonText = primaryItem.buttonTextColor || (staticButtonBg.toLowerCase() === '#ffffff' || staticButtonBg.toLowerCase() === '#fff' ? '#022c22' : '#ffffff');
+
+              return (
+                <Link
+                  href={primaryItem.linkUrl}
+                  className="group/btn inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full font-bold text-[11px] tracking-tight transition-all duration-200 ml-1 hover:brightness-110 hover:shadow-md hover:scale-[1.03] active:scale-95 border border-white/25 shadow-xs backdrop-blur-xs select-none shrink-0 cursor-pointer"
+                  style={{
+                    backgroundColor: staticButtonBg,
+                    borderColor: primaryItem.borderColor || 'rgba(255, 255, 255, 0.3)',
+                    color: staticButtonText,
+                  }}
+                >
+                  <span className="leading-none">{cleanStaticLabel}</span>
+                  <ArrowRight className="w-3 h-3 shrink-0 transition-transform duration-200 group-hover/btn:translate-x-0.5" />
+                </Link>
+              );
+            })()}
           </div>
 
           <button

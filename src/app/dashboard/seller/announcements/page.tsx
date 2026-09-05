@@ -180,13 +180,24 @@ const SOLID_PRESETS = [
 ];
 
 const BUTTON_PRESETS = [
-  'Shop Now →',
-  'View Product →',
-  'Order Today →',
-  'Buy Now →',
-  'Explore Products →',
-  'Special Offer →',
-  'Learn More →',
+  'View Product',
+  'Shop Now',
+  'Order Today',
+  'Buy Now',
+  'Explore Offers',
+  'Pre-Order Now',
+  'Special Deal',
+  'Learn More',
+];
+
+const BUTTON_THEME_PRESETS = [
+  { name: 'Pure White (Pop)', bg: '#ffffff', text: '#022c22', border: '#ffffff' },
+  { name: 'Golden Palmyra', bg: '#f59e0b', text: '#451a03', border: '#fbbf24' },
+  { name: 'Emerald Glow', bg: '#10b981', text: '#ffffff', border: '#34d399' },
+  { name: 'Frosted Glass', bg: 'rgba(255, 255, 255, 0.22)', text: '#ffffff', border: 'rgba(255, 255, 255, 0.4)' },
+  { name: 'Festival Crimson', bg: '#e11d48', text: '#ffffff', border: '#f43f5e' },
+  { name: 'Electric Indigo', bg: '#4f46e5', text: '#ffffff', border: '#6366f1' },
+  { name: 'Midnight Dark', bg: '#0f172a', text: '#ffffff', border: '#334155' },
 ];
 
 export default function SellerAnnouncementsPage() {
@@ -214,9 +225,9 @@ export default function SellerAnnouncementsPage() {
   const [productSearchResults, setProductSearchResults] = useState<ProductSearchResult[]>([]);
   const [searchingProducts, setSearchingProducts] = useState(false);
   const [linkUrl, setLinkUrl] = useState('/products');
-  const [linkLabel, setLinkLabel] = useState('View Product →');
-  const [buttonTextColor, setButtonTextColor] = useState('#ffffff');
-  const [buttonColor, setButtonColor] = useState('#059669');
+  const [linkLabel, setLinkLabel] = useState('View Product');
+  const [buttonTextColor, setButtonTextColor] = useState('#022c22');
+  const [buttonColor, setButtonColor] = useState('#ffffff');
 
   // Custom Theme & Background Mode ('GRADIENT' | 'COLOR' | 'IMAGE')
   const [bgType, setBgType] = useState<'GRADIENT' | 'COLOR' | 'IMAGE'>('GRADIENT');
@@ -320,15 +331,15 @@ export default function SellerAnnouncementsPage() {
     setProductSearchResults([]);
     searchProducts('');
     setLinkUrl('/products');
-    setLinkLabel('View Product →');
+    setLinkLabel('View Product');
     setTheme('emerald_glow');
     setBgType('GRADIENT');
     setBgColor(GRADIENT_PRESETS[0].gradient);
     setTextColor('#ffffff');
     setAccentColor('#064e3b');
     setBorderColor('');
-    setButtonColor('#059669');
-    setButtonTextColor('#ffffff');
+    setButtonColor('#ffffff');
+    setButtonTextColor('#022c22');
     setBgImage('');
     setOverlayOpacity(60);
     setIsMarquee(true);
@@ -343,7 +354,8 @@ export default function SellerAnnouncementsPage() {
     setTitle(item.title || '');
     setContent(item.content);
     setContentTamil(item.contentTamil || '');
-    setLinkLabel(item.linkLabel || 'View Product →');
+    const cleanEditLabel = (item.linkLabel || 'View Product').replace(/\s*(?:→|->|›|>|—)\s*$/, '').trim();
+    setLinkLabel(cleanEditLabel || 'View Product');
     setTheme(item.theme || 'emerald');
 
     if (item.productId) {
@@ -383,8 +395,9 @@ export default function SellerAnnouncementsPage() {
     setTextColor(item.textColor || '#ffffff');
     setAccentColor(item.accentColor || '#064e3b');
     setBorderColor(item.borderColor || '');
-    setButtonColor(item.buttonColor || '#059669');
-    setButtonTextColor(item.buttonTextColor || '#ffffff');
+    const editBtnBg = item.buttonColor || '#ffffff';
+    setButtonColor(editBtnBg);
+    setButtonTextColor(item.buttonTextColor || (editBtnBg.toLowerCase() === '#ffffff' || editBtnBg.toLowerCase() === '#fff' ? '#022c22' : '#ffffff'));
     setBgImage(item.bgImage || '');
     setOverlayOpacity(
       item.overlayOpacity !== undefined && item.overlayOpacity !== null ? item.overlayOpacity : 60
@@ -706,19 +719,26 @@ export default function SellerAnnouncementsPage() {
                     </span>
                   </>
                 )}
-                {hasActionButton && (
-                  <span
-                    className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold border shadow-xs transition-all hover:scale-105"
-                    style={{
-                      backgroundColor: buttonColor || '#059669',
-                      borderColor: borderColor || buttonColor || 'rgba(255,255,255,0.3)',
-                      color: buttonTextColor || '#ffffff',
-                    }}
-                  >
-                    <span>{linkLabel || 'View Product →'}</span>
-                    <ArrowRight className="w-3 h-3" />
-                  </span>
-                )}
+                {hasActionButton && (() => {
+                  const rawPreviewLabel = linkLabel || 'View Product';
+                  const cleanPreviewLabel = rawPreviewLabel.replace(/\s*(?:→|->|›|>|—)\s*$/, '').trim();
+                  const btnBg = buttonColor || '#ffffff';
+                  const btnTxt = buttonTextColor || (btnBg.toLowerCase() === '#ffffff' || btnBg.toLowerCase() === '#fff' ? '#022c22' : '#ffffff');
+
+                  return (
+                    <span
+                      className="group/btn inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-[11px] font-bold tracking-tight border border-white/25 shadow-xs backdrop-blur-xs transition-all duration-200 hover:scale-[1.03] hover:shadow-md cursor-pointer select-none"
+                      style={{
+                        backgroundColor: btnBg,
+                        borderColor: borderColor || 'rgba(255,255,255,0.3)',
+                        color: btnTxt,
+                      }}
+                    >
+                      <span className="leading-none">{cleanPreviewLabel}</span>
+                      <ArrowRight className="w-3 h-3 shrink-0 transition-transform duration-200 group-hover/btn:translate-x-0.5" />
+                    </span>
+                  );
+                })()}
               </div>
             </div>
           </div>
@@ -980,36 +1000,85 @@ export default function SellerAnnouncementsPage() {
                   </div>
 
                   {/* Preset Pills */}
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-[10px] font-bold text-gray-500 dark:text-slate-400 mr-1">
-                      Presets:
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] font-bold text-gray-500 dark:text-slate-400 block">
+                      Quick Label Suggestions:
                     </span>
-                    {BUTTON_PRESETS.map((preset) => (
-                      <button
-                        key={preset}
-                        type="button"
-                        onClick={() => setLinkLabel(preset)}
-                        className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-all ${
-                          linkLabel === preset
-                            ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
-                            : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-300 border-gray-200 dark:border-slate-700 hover:border-emerald-400'
-                        }`}
-                      >
-                        {preset}
-                      </button>
-                    ))}
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {BUTTON_PRESETS.map((preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => setLinkLabel(preset)}
+                          className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-all ${
+                            linkLabel === preset
+                              ? 'bg-brand-600 dark:bg-emerald-600 text-white border-brand-600 dark:border-emerald-600 shadow-xs'
+                              : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-300 border-gray-200 dark:border-slate-700 hover:border-brand-400'
+                          }`}
+                        >
+                          {preset}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
-                  {/* Button Colors Customization */}
+                  {/* 1-Click Button Theme Presets */}
+                  <div className="space-y-1.5 pt-2">
+                    <span className="text-[10px] font-bold text-gray-500 dark:text-slate-400 block">
+                      1-Click Button Theme Presets:
+                    </span>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {BUTTON_THEME_PRESETS.map((themePreset) => {
+                        const isSelected =
+                          buttonColor.toLowerCase() === themePreset.bg.toLowerCase() &&
+                          buttonTextColor.toLowerCase() === themePreset.text.toLowerCase();
+
+                        return (
+                          <button
+                            key={themePreset.name}
+                            type="button"
+                            onClick={() => {
+                              setButtonColor(themePreset.bg);
+                              setButtonTextColor(themePreset.text);
+                            }}
+                            className={`p-2 rounded-xl border text-left flex flex-col gap-1.5 transition-all ${
+                              isSelected
+                                ? 'border-brand-500 dark:border-emerald-500 ring-2 ring-brand-500/20 bg-brand-50/50 dark:bg-emerald-950/30'
+                                : 'border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 hover:border-gray-300 dark:hover:border-slate-600'
+                            }`}
+                          >
+                            <span className="text-[10px] font-bold text-gray-700 dark:text-slate-300 truncate">
+                              {themePreset.name}
+                            </span>
+                            <div className="flex items-center">
+                              <span
+                                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border shadow-2xs"
+                                style={{
+                                  backgroundColor: themePreset.bg,
+                                  color: themePreset.text,
+                                  borderColor: themePreset.border || 'rgba(0,0,0,0.1)',
+                                }}
+                              >
+                                <span>Preview</span>
+                                <ArrowRight className="w-2.5 h-2.5" />
+                              </span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Button Colors Fine-Tuning */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                     <div className="space-y-1">
                       <span className="text-[10px] font-bold text-gray-700 dark:text-slate-300 block">
-                        Button Background Color
+                        Custom Background Color
                       </span>
                       <div className="flex items-center gap-1.5">
                         <input
                           type="color"
-                          value={buttonColor}
+                          value={buttonColor.startsWith('#') ? buttonColor : '#ffffff'}
                           onChange={(e) => setButtonColor(e.target.value)}
                           className="w-7 h-7 rounded-lg border border-gray-300 dark:border-slate-600 cursor-pointer p-0.5 bg-transparent shrink-0"
                         />
@@ -1024,12 +1093,12 @@ export default function SellerAnnouncementsPage() {
 
                     <div className="space-y-1">
                       <span className="text-[10px] font-bold text-gray-700 dark:text-slate-300 block">
-                        Button Text Color
+                        Custom Text Color
                       </span>
                       <div className="flex items-center gap-1.5">
                         <input
                           type="color"
-                          value={buttonTextColor}
+                          value={buttonTextColor.startsWith('#') ? buttonTextColor : '#022c22'}
                           onChange={(e) => setButtonTextColor(e.target.value)}
                           className="w-7 h-7 rounded-lg border border-gray-300 dark:border-slate-600 cursor-pointer p-0.5 bg-transparent shrink-0"
                         />
